@@ -18,9 +18,9 @@ def run_kfold_lightgbm(
     y: pd.DataFrame,
     X_test: pd.DataFrame,
     params: Optional[Dict[str, Any]] = None,
-    token: Optional[str] = None,
     verbose: Union[int, bool] = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
+
     kf = KFold(n_splits=n_fold, random_state=42, shuffle=True)
     splits = kf.split(X, y)
     lgb_oof = np.zeros(X.shape[0])
@@ -34,29 +34,28 @@ def run_kfold_lightgbm(
         X_train, y_train = X.loc[train_idx], y[train_idx]
         X_valid, y_valid = X.loc[valid_idx], y[valid_idx]
 
-        # RMSPE weight
-        weights = 1 / np.square(y_train)
-        lgbm_train = lgbm.Dataset(X_train, y_train, weight=weights)
+        # Root mean squared percentage error weights
+        train_weights = 1 / np.square(y_train)
+        val_weights = 1 / np.square(y_valid)
 
-        weights = 1 / np.square(y_valid)
-        lgbm_valid = lgbm.Dataset(
-            X_valid, y_valid, reference=lgbm_train, weight=weights
+        train_dataset = lgbm.Dataset(
+            X_train, y_train, weight=train_weights, categorical_feature=["stock_id"]
+        )
+        val_dataset = lgbm.Dataset(
+            X_valid, y_valid, weight=val_weights, categorical_feature=["stock_id"]
         )
         try:
-            run = neptune.init(
-                project="ds-wook/optiver-prediction",
-                api_token=token,
-            )
+            run = neptune.init(project="ds-wook/optiver-prediction", tags="LightGBM")
             neptune_callback = NeptuneCallback(run=run)
             # model
             model = lgbm.train(
                 params=params,
-                train_set=lgbm_train,
-                valid_sets=[lgbm_train, lgbm_valid],
-                num_boost_round=5000,
+                train_set=train_dataset,
+                valid_sets=[train_dataset, val_dataset],
+                num_boost_round=10000,
+                early_stopping_rounds=50,
                 feval=feval_RMSPE,
-                verbose_eval=100,
-                categorical_feature=["stock_id"],
+                verbose_eval=50,
                 callbacks=[neptune_callback],
             )
 
@@ -84,12 +83,12 @@ def run_kfold_lightgbm(
             # model
             model = lgbm.train(
                 params=params,
-                train_set=lgbm_train,
-                valid_sets=[lgbm_train, lgbm_valid],
-                num_boost_round=5000,
+                train_set=train_dataset,
+                valid_sets=[train_dataset, val_dataset],
+                num_boost_round=10000,
+                early_stopping_rounds=50,
                 feval=feval_RMSPE,
-                verbose_eval=100,
-                categorical_feature=["stock_id"],
+                verbose_eval=50,
             )
 
             # validation

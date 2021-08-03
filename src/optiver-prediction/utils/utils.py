@@ -12,4 +12,4 @@ def feval_RMSPE(
     preds: np.ndarray, lgbm_train: lgbm.Dataset
 ) -> Tuple[Union[str, float, bool]]:
     labels = lgbm_train.get_label()
-    return "RMSPE", round(rmspe(y_true=labels, y_pred=preds), 5), False
+    return "RMSPE", rmspe(y_true=labels, y_pred=preds), False
