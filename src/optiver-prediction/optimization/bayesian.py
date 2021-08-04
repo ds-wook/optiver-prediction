@@ -1,4 +1,3 @@
-import json
 import warnings
 from typing import Callable, Sequence, Union
 
@@ -8,6 +7,7 @@ import neptune.new.integrations.optuna as optuna_utils
 import numpy as np
 import optuna
 import pandas as pd
+import yaml
 from neptune.new.exceptions import NeptuneMissingApiTokenException
 from optuna.integration import LightGBMPruningCallback
 from optuna.pruners import MedianPruner
@@ -80,7 +80,7 @@ class BayesianOptimizer:
         params["n_jobs"] = -1
 
         with open("../../parameters/" + params_name, "w") as p:
-            json.dump(params, p, indent="\t")
+            yaml.dump(params, p)
 
 
 def lgbm_objective(
@@ -145,7 +145,7 @@ def lgbm_objective(
             early_stopping_rounds=50,
             feval=feval_RMSPE,
             callbacks=[pruning_callback],
-            verbose_eval=50,
+            verbose_eval=False,
         )
 
         # validation

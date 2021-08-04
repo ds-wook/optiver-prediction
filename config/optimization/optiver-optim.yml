@@ -1,0 +1,4 @@
+path: "../../input/"
+trial: 100
+params: best_lgbm_params.yml
+fold: 5
