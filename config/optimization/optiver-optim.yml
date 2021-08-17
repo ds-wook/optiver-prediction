@@ -2,8 +2,9 @@ dataset:
   path: "../../input/optiver-realized-volatility-prediction/"
 
 optimization:
-  trial: 100
-  params: best_lgbm_params.json
+  trials: 100
+  params: best_lgbm_params.yaml
 
 model:
   fold: 10
+  fold_name: "kf"

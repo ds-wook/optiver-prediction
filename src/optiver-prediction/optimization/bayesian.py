@@ -8,13 +8,14 @@ import numpy as np
 import optuna
 import pandas as pd
 import yaml
+from hydra.utils import to_absolute_path
 from neptune.new.exceptions import NeptuneMissingApiTokenException
 from optuna.integration import LightGBMPruningCallback
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial, Trial
-from sklearn.model_selection import KFold
+from sklearn.model_selection import GroupKFold, KFold
 from utils.utils import feval_RMSPE, rmspe
 
 warnings.filterwarnings("ignore")
@@ -79,7 +80,8 @@ class BayesianOptimizer:
         params["verbosity"] = -1
         params["n_jobs"] = -1
 
-        with open("../../parameters/" + params_name, "w") as p:
+        path = to_absolute_path("../../parameters/" + params_name)
+        with open(path, "w") as p:
             yaml.dump(params, p)
 
 
@@ -90,7 +92,7 @@ def lgbm_objective(
     n_fold: int,
 ) -> float:
     params = {
-        "learning_rate": 0.1,
+        "learning_rate": trial.suggest_float("learning_rate", 1e-02, 2e-01),
         "lambda_l1": trial.suggest_float("lambda_l1", 1, 10),
         "lambda_l2": trial.suggest_float("lambda_l2", 1, 10),
         "num_leaves": trial.suggest_int("num_leaves", 512, 1024),
@@ -117,8 +119,81 @@ def lgbm_objective(
     }
     pruning_callback = LightGBMPruningCallback(trial, "RMSPE", valid_name="valid_1")
 
-    kf = KFold(n_splits=n_fold, random_state=66, shuffle=True)
+    kf = KFold(n_splits=n_fold, random_state=42, shuffle=True)
     splits = kf.split(X, y)
+    lgbm_oof = np.zeros(X.shape[0])
+
+    for fold, (train_idx, valid_idx) in enumerate(splits, 1):
+        # create dataset
+        X_train, y_train = X.loc[train_idx], y[train_idx]
+        X_valid, y_valid = X.loc[valid_idx], y[valid_idx]
+
+        # Root mean squared percentage error weights
+        train_weights = 1 / np.square(y_train)
+        val_weights = 1 / np.square(y_valid)
+
+        train_dataset = lgbm.Dataset(
+            X_train, y_train, weight=train_weights, categorical_feature=["stock_id"]
+        )
+        val_dataset = lgbm.Dataset(
+            X_valid, y_valid, weight=val_weights, categorical_feature=["stock_id"]
+        )
+        # model
+        model = lgbm.train(
+            params=params,
+            train_set=train_dataset,
+            valid_sets=[train_dataset, val_dataset],
+            num_boost_round=10000,
+            early_stopping_rounds=50,
+            feval=feval_RMSPE,
+            callbacks=[pruning_callback],
+            verbose_eval=False,
+        )
+
+        # validation
+        lgbm_oof[valid_idx] = model.predict(X_valid, num_iteration=model.best_iteration)
+
+    RMSPE = rmspe(y, lgbm_oof)
+    return RMSPE
+
+
+def group_lgbm_objective(
+    trial: FrozenTrial,
+    X: pd.DataFrame,
+    y: pd.Series,
+    groups: pd.Series,
+    n_fold: int,
+) -> float:
+    params = {
+        "learning_rate": trial.suggest_float("learning_rate", 1e-02, 2e-01),
+        "lambda_l1": trial.suggest_float("lambda_l1", 1, 10),
+        "lambda_l2": trial.suggest_float("lambda_l2", 1, 10),
+        "num_leaves": trial.suggest_int("num_leaves", 512, 1024),
+        "min_sum_hessian_in_leaf": trial.suggest_float(
+            "min_sum_hessian_in_leaf", 20, 50
+        ),
+        "feature_fraction": trial.suggest_uniform("feature_fraction", 0.1, 1),
+        "feature_fraction_bynode": trial.suggest_uniform(
+            "feature_fraction_bynode", 0.1, 1
+        ),
+        "bagging_fraction": trial.suggest_uniform("bagging_fraction", 0.1, 1),
+        "bagging_freq": trial.suggest_int("bagging_freq", 35, 100),
+        "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 512, 1024),
+        "max_depth": trial.suggest_int("max_depth", 3, 10),
+        "seed": 42,
+        "feature_fraction_seed": 42,
+        "bagging_seed": 42,
+        "drop_seed": 42,
+        "data_random_seed": 42,
+        "objective": "rmse",
+        "boosting": "gbdt",
+        "verbosity": -1,
+        "n_jobs": -1,
+    }
+    pruning_callback = LightGBMPruningCallback(trial, "RMSPE", valid_name="valid_1")
+
+    group_kf = GroupKFold(n_splits=n_fold)
+    splits = group_kf.split(X, y, groups=groups)
     lgbm_oof = np.zeros(X.shape[0])
 
     for fold, (train_idx, valid_idx) in enumerate(splits, 1):

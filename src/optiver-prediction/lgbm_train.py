@@ -1,12 +1,13 @@
 import hydra
 import pandas as pd
+from hydra.utils import to_absolute_path
 from model.boosting_tree import run_kfold_lightgbm
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 
 @hydra.main(config_path="../../config/train/", config_name="lgbm_train.yml")
 def _main(cfg: DictConfig):
-    path = hydra.utils.to_absolute_path(cfg.dataset.path) + "/"
+    path = to_absolute_path(cfg.dataset.path) + "/"
     train = pd.read_pickle(path + "train.pkl")
     test = pd.read_pickle(path + "test.pkl")
     # Split features and target
@@ -15,28 +16,8 @@ def _main(cfg: DictConfig):
 
     y_pred = test[["row_id"]]
     X_test = test.drop(["time_id", "row_id"], axis=1)
-
-    params = {
-        "bagging_fraction": 0.9968055573360797,
-        "bagging_freq": 86,
-        "bagging_seed": 42,
-        "boosting": "gbdt",
-        "drop_seed": 42,
-        "feature_fraction": 0.20775067071381137,
-        "feature_fraction_bynode": 0.8316171499590596,
-        "feature_fraction_seed": 42,
-        "lambda_l1": 6.537566377843428,
-        "lambda_l2": 5.810256006823,
-        "learning_rate": 0.2,
-        "max_depth": 7,
-        "min_data_in_leaf": 912,
-        "min_sum_hessian_in_leaf": 46.44782425002911,
-        "n_jobs": -1,
-        "num_leaves": 938,
-        "objective": "rmse",
-        "seed": 42,
-        "verbosity": -1,
-    }
+    params_path = to_absolute_path("../../parameters/best_lgbm_param.yml")
+    params = OmegaConf.load(params_path)
 
     lgb_oof, lgb_preds = run_kfold_lightgbm(
         cfg.model.fold, X, y, X_test, params, cfg.model.verbose
