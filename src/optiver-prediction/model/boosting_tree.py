@@ -1,12 +1,13 @@
 import warnings
 from typing import Any, Dict, Optional, Tuple, Union
 
+import hydra
 import lightgbm as lgbm
 import neptune.new as neptune
 import numpy as np
 import pandas as pd
 from neptune.new.integrations.lightgbm import NeptuneCallback, create_booster_summary
-from sklearn.model_selection import KFold, GroupKFold
+from sklearn.model_selection import KFold
 from utils.utils import feval_RMSPE, rmspe
 
 warnings.filterwarnings("ignore")
@@ -70,11 +71,12 @@ def run_kfold_lightgbm(
 
             print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
 
-            # save model
-            model.save_model(
-                f"../../lgbm_model/lgbm_fold{fold}.txt",
-                num_iteration=model.best_iteration,
+            model_path = hydra.utils.to_absolute_path(
+                f"../../lgbm_model/lgbm_fold{fold}.txt"
             )
+            # save model
+            model.save_model(model_path, num_iteration=model.best_iteration)
+
             # Log summary metadata to the same run under the "lgbm_summary" namespace
             run["lgbm_summary"] = create_booster_summary(
                 booster=model,
@@ -104,5 +106,3 @@ def run_kfold_lightgbm(
             print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
 
     return lgb_oof, lgb_preds
-
-

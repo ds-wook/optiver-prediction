@@ -1,5 +1,5 @@
 import hydra
-from data.dataset import load_dataset
+import pandas as pd
 from model.boosting_tree import run_kfold_lightgbm
 from omegaconf import DictConfig
 
@@ -7,9 +7,8 @@ from omegaconf import DictConfig
 @hydra.main(config_path="../../config/train/", config_name="lgbm_train.yml")
 def _main(cfg: DictConfig):
     path = hydra.utils.to_absolute_path(cfg.dataset.path) + "/"
-    train, test = load_dataset(path)
-    # train = pd.read_pickle(cfg["path"] + "train.pkl")
-    # test = pd.read_pickle(cfg["path"] + "test.pkl")
+    train = pd.read_pickle(path + "train.pkl")
+    test = pd.read_pickle(path + "test.pkl")
     # Split features and target
     X = train.drop(["row_id", "target", "time_id"], axis=1)
     y = train["target"]
@@ -28,7 +27,7 @@ def _main(cfg: DictConfig):
         "feature_fraction_seed": 42,
         "lambda_l1": 6.537566377843428,
         "lambda_l2": 5.810256006823,
-        "learning_rate": 0.11927372203947056,
+        "learning_rate": 0.2,
         "max_depth": 7,
         "min_data_in_leaf": 912,
         "min_sum_hessian_in_leaf": 46.44782425002911,

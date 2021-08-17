@@ -1,15 +1,17 @@
+import warnings
 from pathlib import Path
 
 import hydra
 import pandas as pd
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
+
+warnings.filterwarnings("ignore")
 
 
-@hydra.main(config_path="../../config/train/", config_name="lgbm_train.yaml")
+@hydra.main(config_path="../../config/train/", config_name="lgbm_train.yml")
 def _main(cfg: DictConfig):
-    path = hydra.utils.to_absolute_path(cfg.dataset.path)
-    train = pd.read_csv(path + "/train.csv")
-    print(train)
+    config = OmegaConf.to_yaml(cfg)
+    print(config)
 
 
 if __name__ == "__main__":

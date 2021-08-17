@@ -1,7 +1,7 @@
 from functools import partial
 
 import hydra
-from data.dataset import load_dataset
+import pandas as pd
 from omegaconf import DictConfig
 from optimization.bayesian import BayesianOptimizer, lgbm_objective
 
@@ -9,8 +9,7 @@ from optimization.bayesian import BayesianOptimizer, lgbm_objective
 @hydra.main(config_path="../../config/optimization/", config_name="optiver-optim.yml")
 def _main(cfg: DictConfig):
     path = hydra.utils.to_absolute_path(cfg.dataset.path) + "/"
-    train, test = load_dataset(path)
-    # train = pd.read_pickle(cfg["path"] + "train.pkl")
+    train = pd.read_pickle(path + "train.pkl")
     # Split features and target
     X = train.drop(["row_id", "target", "time_id"], axis=1)
     y = train["target"]
