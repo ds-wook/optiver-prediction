@@ -13,3 +13,9 @@ def feval_RMSPE(
 ) -> Tuple[Union[str, float, bool]]:
     labels = lgbm_train.get_label()
     return "RMSPE", rmspe(y_true=labels, y_pred=preds), False
+
+
+def feval_rmspe(
+    y_true: np.ndarray, y_pred: np.ndarray
+) -> Tuple[Union[str, float, bool]]:
+    return "RMSPE", rmspe(y_true, y_pred), False

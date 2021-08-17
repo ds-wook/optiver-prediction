@@ -1,3 +1,4 @@
+import json
 import warnings
 from typing import Callable, Sequence, Union
 
@@ -7,7 +8,6 @@ import neptune.new.integrations.optuna as optuna_utils
 import numpy as np
 import optuna
 import pandas as pd
-import yaml
 from neptune.new.exceptions import NeptuneMissingApiTokenException
 from optuna.integration import LightGBMPruningCallback
 from optuna.pruners import MedianPruner
@@ -80,7 +80,7 @@ class BayesianOptimizer:
         params["n_jobs"] = -1
 
         with open("../../parameters/" + params_name, "w") as p:
-            yaml.dump(params, p)
+            json.dump(params, p, )
 
 
 def lgbm_objective(
@@ -90,7 +90,7 @@ def lgbm_objective(
     n_fold: int,
 ) -> float:
     params = {
-        "learning_rate": trial.suggest_float("learning_rate", 0.001, 0.2),
+        "learning_rate": 0.1,
         "lambda_l1": trial.suggest_float("lambda_l1", 1, 10),
         "lambda_l2": trial.suggest_float("lambda_l2", 1, 10),
         "num_leaves": trial.suggest_int("num_leaves", 512, 1024),
@@ -117,7 +117,7 @@ def lgbm_objective(
     }
     pruning_callback = LightGBMPruningCallback(trial, "RMSPE", valid_name="valid_1")
 
-    kf = KFold(n_splits=n_fold, random_state=42, shuffle=True)
+    kf = KFold(n_splits=n_fold, random_state=66, shuffle=True)
     splits = kf.split(X, y)
     lgbm_oof = np.zeros(X.shape[0])
 

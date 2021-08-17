@@ -1,44 +1,46 @@
-import argparse
-
+import hydra
 from data.dataset import load_dataset
 from model.boosting_tree import run_kfold_lightgbm
+from omegaconf import DictConfig
 
 
-def define_argparser():
-    parse = argparse.ArgumentParser("Train!")
-    parse.add_argument(
-        "--path", type=str, default="../../input/optiver-realized-volatility-prediction"
-    )
-    parse.add_argument("--verbose", type=int, default=False)
-    parse.add_argument("--token", type=str, default="None")
-    parse.add_argument("--fold", type=int, default=5)
-    args = parse.parse_args()
-    return args
+@hydra.main(config_path="../../config/train/", config_name="lgbm_train.yml")
+def _main(cfg: DictConfig):
+    path = hydra.utils.to_absolute_path(cfg.dataset.path) + "/"
+    train, test = load_dataset(path)
+    # train = pd.read_pickle(cfg["path"] + "train.pkl")
+    # test = pd.read_pickle(cfg["path"] + "test.pkl")
+    # Split features and target
+    X = train.drop(["row_id", "target", "time_id"], axis=1)
+    y = train["target"]
 
+    y_pred = test[["row_id"]]
+    X_test = test.drop(["time_id", "row_id"], axis=1)
 
-def _main(args: argparse.Namespace):
-    df_train, df_test = load_dataset(args.path)
-    X = df_train.drop(["row_id", "target"], axis=1)
-    y = df_train["target"]
-
-    y_pred = df_test[["row_id"]]
-    X_test = df_test.drop(["time_id", "row_id"], axis=1)
-
-    # training lightgbm
     params = {
+        "bagging_fraction": 0.9968055573360797,
+        "bagging_freq": 86,
+        "bagging_seed": 42,
+        "boosting": "gbdt",
+        "drop_seed": 42,
+        "feature_fraction": 0.20775067071381137,
+        "feature_fraction_bynode": 0.8316171499590596,
+        "feature_fraction_seed": 42,
+        "lambda_l1": 6.537566377843428,
+        "lambda_l2": 5.810256006823,
+        "learning_rate": 0.11927372203947056,
+        "max_depth": 7,
+        "min_data_in_leaf": 912,
+        "min_sum_hessian_in_leaf": 46.44782425002911,
+        "n_jobs": -1,
+        "num_leaves": 938,
         "objective": "rmse",
-        "metric": "rmse",
-        "boosting_type": "gbdt",
-        "early_stopping_rounds": 30,
-        "learning_rate": 0.01,
-        "lambda_l1": 1,
-        "lambda_l2": 1,
-        "feature_fraction": 0.8,
-        "bagging_fraction": 0.8,
+        "seed": 42,
+        "verbosity": -1,
     }
 
     lgb_oof, lgb_preds = run_kfold_lightgbm(
-        args.fold, X, y, X_test, params, args.token, args.verbose
+        cfg.model.fold, X, y, X_test, params, cfg.model.verbose
     )
 
     y_pred = y_pred.assign(target=lgb_preds)
@@ -46,5 +48,4 @@ def _main(args: argparse.Namespace):
 
 
 if __name__ == "__main__":
-    args = define_argparser()
-    _main(args)
+    _main()
