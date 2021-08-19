@@ -13,7 +13,7 @@ from optimization.bayesian import (
 @hydra.main(config_path="../../config/optimization/", config_name="optiver-optim.yml")
 def _main(cfg: DictConfig):
     path = hydra.utils.to_absolute_path(cfg.dataset.path) + "/"
-    train = pd.read_pickle(path + "train.pkl")
+    train = pd.read_csv(path + "train_with_features.csv")
     # Split features and target
     X = train.drop(["row_id", "target", "time_id"], axis=1)
     y = train["target"]

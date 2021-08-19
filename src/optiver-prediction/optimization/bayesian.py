@@ -92,7 +92,7 @@ def lgbm_objective(
     n_fold: int,
 ) -> float:
     params = {
-        "learning_rate": trial.suggest_float("learning_rate", 1e-02, 2e-01),
+        "learning_rate": trial.suggest_float("learning_rate", 1e-01, 2e-01),
         "lambda_l1": trial.suggest_float("lambda_l1", 1, 10),
         "lambda_l2": trial.suggest_float("lambda_l2", 1, 10),
         "num_leaves": trial.suggest_int("num_leaves", 512, 1024),
