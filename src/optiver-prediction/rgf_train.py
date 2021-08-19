@@ -1,7 +1,7 @@
 import hydra
 import pandas as pd
 from hydra.utils import to_absolute_path
-from model.regression import run_kfold_rgf
+from model.forest import run_kfold_rgf
 from omegaconf import DictConfig
 from utils.utils import rmspe
 
@@ -15,13 +15,15 @@ def _main(cfg: DictConfig):
     y = train["target"]
     # Transform stock id to a numeric value
     X["stock_id"] = X["stock_id"].astype(int)
-
+    X.fillna(0, inplace=True)
     # Hyperparammeters (optimized)
     params = {
+        "learning_rate": 0.1,
         "max_leaf": 400,
         "algorithm": "RGF_Sib",
         "test_interval": 100,
-        "verbose": True,
+        "loss": "LS",
+        "verbose": cfg.model.verbose,
     }
     rgf_oof = run_kfold_rgf(cfg.model.fold, X, y, params)
 

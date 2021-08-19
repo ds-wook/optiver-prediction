@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import joblib
 import numpy as np
@@ -17,7 +17,7 @@ def run_kfold_rgf(
     X: pd.DataFrame,
     y: pd.DataFrame,
     params: Optional[Dict[str, Any]] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> np.ndarray:
 
     kf = KFold(n_splits=n_fold, random_state=42, shuffle=True)
     splits = kf.split(X)
