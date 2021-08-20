@@ -74,7 +74,9 @@ def run_kfold_lightgbm(
 
             print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
 
-            model_path = to_absolute_path(f"../../lgbm_model/lgbm_kfold{fold}.txt")
+            model_path = to_absolute_path(
+                f"../../models/lgbm_model/best_lgbm_kfold{fold}.txt"
+            )
             # save model
             model.save_model(model_path, num_iteration=model.best_iteration)
 
@@ -106,6 +108,7 @@ def run_kfold_lightgbm(
             RMSPE = round(rmspe(y_true=y_valid, y_pred=y_pred), 3)
             print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
 
+    print(f"Total Performance RMSPE: {rmspe(y, lgb_oof)}")
     return lgb_oof, lgb_preds
 
 
@@ -244,7 +247,9 @@ def run_group_kfold_lightgbm(
 
             print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
 
-            model_path = to_absolute_path(f"../../lgbm_model/lgbm_groupfold{fold}.txt")
+            model_path = to_absolute_path(
+                f"../../models/lgbm_model/lgbm_groupfold{fold}.txt"
+            )
             # save model
             model.save_model(model_path, num_iteration=model.best_iteration)
 
@@ -275,5 +280,7 @@ def run_group_kfold_lightgbm(
 
             RMSPE = round(rmspe(y_true=y_valid, y_pred=y_pred), 3)
             print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
+
+    print(f"Total Performance RMSPE: {rmspe(y, lgb_oof)}")
 
     return lgb_oof, lgb_preds

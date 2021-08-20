@@ -301,7 +301,6 @@ def get_time_stock(df: pd.DataFrame) -> pd.DataFrame:
 
 # Funtion to make preprocessing function in parallel (for each stock id)
 def preprocessor(list_stock_ids: List[str], is_train: bool = True) -> pd.DataFrame:
-
     # Parrallel for loop
     def for_joblib(stock_id):
         # Train

@@ -1,21 +1,15 @@
 import hydra
 import pandas as pd
 from hydra.utils import to_absolute_path
-from model.boosting_tree import run_kfold_lightgbm
+from model.boosting_tree import run_group_kfold_lightgbm, run_kfold_lightgbm
 from omegaconf import DictConfig
 
 
 @hydra.main(config_path="../../config/train/", config_name="lgbm_train.yml")
 def _main(cfg: DictConfig):
     path = to_absolute_path(cfg.dataset.path) + "/"
-    train = pd.read_pickle(path + "fea0_train.pkl")
-    test = pd.read_pickle(path + "fea0_test.pkl")
-    # # Split features and target
-    # X = train.drop(["row_id", "target", "time_id"], axis=1)
-    # y = train["target"]
-
-    # y_pred = test[["row_id"]]
-    # X_test = test.drop(["time_id", "row_id"], axis=1)
+    train = pd.read_pickle(path + "fea_train_best.pkl")
+    test = pd.read_pickle(path + "fea_test_best.pkl")
     # Split features and target
     X = train.drop(["row_id", "target", "time_id"], axis=1)
     y = train["target"]
@@ -47,8 +41,12 @@ def _main(cfg: DictConfig):
         "verbosity": -1,
         "n_jobs": -1,
     }
-    lgb_oof, lgb_preds = run_kfold_lightgbm(
-        cfg.model.fold, X, y, X_test, params, cfg.model.verbose
+    lgb_oof, lgb_preds = (
+        run_kfold_lightgbm(cfg.model.fold, X, y, X_test, params, cfg.model.verbose)
+        if cfg.model.fold_name == "kf"
+        else run_group_kfold_lightgbm(
+            cfg.model.fold, X, y, X_test, params, train["time_id"], cfg.model.verbose
+        )
     )
 
     # Save test predictions

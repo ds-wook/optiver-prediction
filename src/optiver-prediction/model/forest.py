@@ -42,7 +42,8 @@ def run_kfold_rgf(
 
         RMSPE = round(rmspe(y_true=y_valid, y_pred=rgf_oof[valid_idx]), 3)
         print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
-    model_path = to_absolute_path(f"../../models/rgf_model/rgf_kfold{fold}.pkl")
-    # save model
-    joblib.dump(model, model_path)
+        model_path = to_absolute_path(f"../../models/rgf_model/rgf_kfold{fold}.pkl")
+        # save model
+        joblib.dump(model, model_path)
+
     return rgf_oof
