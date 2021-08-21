@@ -158,7 +158,9 @@ def run_kfold_xgboost(
 
             print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
 
-            model_path = to_absolute_path(f"../../xgb_model/xgb_kfold{fold}.pkl")
+            model_path = to_absolute_path(
+                f"../../models/xgb_model/best_xgb_kfold{fold}.pkl"
+            )
             # save model
             joblib.dump(model, model_path)
             run.stop()
@@ -181,7 +183,9 @@ def run_kfold_xgboost(
             RMSPE = round(rmspe(y_true=y_valid, y_pred=xgb_oof[valid_idx]), 3)
             print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
 
-            model_path = to_absolute_path(f"../../xgb_model/xgb_kfold{fold}.pkl")
+            model_path = to_absolute_path(
+                f"../../models/xgb_model/best_xgb_kfold{fold}.pkl"
+            )
             # save model
             model.save_model(model_path)
 

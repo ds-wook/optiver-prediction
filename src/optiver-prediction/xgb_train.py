@@ -9,7 +9,7 @@ from utils.utils import rmspe
 @hydra.main(config_path="../../config/train/", config_name="lgbm_train.yml")
 def _main(cfg: DictConfig):
     path = to_absolute_path(cfg.dataset.path) + "/"
-    train = pd.read_csv(path + "train_with_features.csv")
+    train = pd.read_pickle(path + "fea_train_best.pkl")
     # Split features and target
     X = train.drop(["row_id", "target", "time_id"], axis=1)
     y = train["target"]
