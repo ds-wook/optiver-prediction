@@ -203,7 +203,7 @@ def run_group_kfold_lightgbm(
 ) -> Tuple[np.ndarray, np.ndarray]:
 
     group_kf = GroupKFold(n_splits=n_fold)
-    splits = group_kf.split(X, y, groups=groups)
+    splits = group_kf.split(X=X, y=y, groups=groups)
     lgb_oof = np.zeros(X.shape[0])
     lgb_preds = np.zeros(X_test.shape[0])
 

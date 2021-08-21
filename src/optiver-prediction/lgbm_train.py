@@ -42,11 +42,11 @@ def _main(cfg: DictConfig):
         "n_jobs": -1,
     }
     lgb_oof, lgb_preds = (
-        run_kfold_lightgbm(cfg.model.fold, X, y, X_test, params, cfg.model.verbose)
-        if cfg.model.fold_name == "kf"
-        else run_group_kfold_lightgbm(
-            cfg.model.fold, X, y, X_test, params, train["time_id"], cfg.model.verbose
+        run_group_kfold_lightgbm(
+            cfg.model.fold, X, y, X_test, train["time_id"], params, cfg.model.verbose
         )
+        if cfg.model.fold_name == "group"
+        else run_kfold_lightgbm(cfg.model.fold, X, y, X_test, params, cfg.model.verbose)
     )
 
     # Save test predictions
