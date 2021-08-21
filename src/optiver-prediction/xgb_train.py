@@ -1,7 +1,7 @@
 import hydra
 import pandas as pd
 from hydra.utils import to_absolute_path
-from model.boosting_tree import run_kfold_xgboost
+from model.boosting_tree import run_group_kfold_xgboost, run_kfold_xgboost
 from omegaconf import DictConfig
 from utils.utils import rmspe
 
@@ -27,7 +27,13 @@ def _main(cfg: DictConfig):
         "reg_lambda": 0.0011282775827873572,
         "reg_alpha": 0.034971544950363434,
     }
-    xgb_oof = run_kfold_xgboost(cfg.model.fold, X, y, params, cfg.model.verbose)
+    xgb_oof = (
+        run_group_kfold_xgboost(
+            cfg.model.fold, X, y, train["time_id"], params, cfg.model.verbose
+        )
+        if cfg.model.fold_name == "group"
+        else run_kfold_xgboost(cfg.model.fold, X, y, params, cfg.model.verbose)
+    )
 
     print(f"RMSPE's Score: {rmspe(y, xgb_oof)}")
 

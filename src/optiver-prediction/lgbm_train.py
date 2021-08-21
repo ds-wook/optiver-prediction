@@ -5,7 +5,7 @@ from model.boosting_tree import run_group_kfold_lightgbm, run_kfold_lightgbm
 from omegaconf import DictConfig
 
 
-@hydra.main(config_path="../../config/train/", config_name="lgbm_train.yml")
+@hydra.main(config_path="../../config/train/", config_name="train.yaml")
 def _main(cfg: DictConfig):
     path = to_absolute_path(cfg.dataset.path) + "/"
     train = pd.read_pickle(path + "fea_train_best.pkl")

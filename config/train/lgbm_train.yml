@@ -1,7 +1,0 @@
-dataset:
-  path: "../../input/optiver-realized-volatility-prediction"
-
-model:
-  verbose: 100
-  fold: 10
-  fold_name: "group"
