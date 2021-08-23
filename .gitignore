@@ -130,5 +130,5 @@ dmypy.json
 input/
 .vscode/
 .neptune/
-lgbm_model/
 outputs/
+models/

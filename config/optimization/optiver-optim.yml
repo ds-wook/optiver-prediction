@@ -7,4 +7,4 @@ optimization:
 
 model:
   fold: 10
-  fold_name: "kf"
+  fold_name: "group"

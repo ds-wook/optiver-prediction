@@ -1,5 +1,7 @@
 dataset:
   path: "../../input/optiver-realized-volatility-prediction"
+  train: "fea0_train_best.pkl"
+  test: "fea0_test_best.pkl"
 
 model:
   verbose: 100

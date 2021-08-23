@@ -62,12 +62,8 @@ def run_kfold_lightgbm(
         )
 
         # validation
-        lgb_oof[valid_idx] = model.predict(
-            X_valid, num_iteration=model.best_iteration
-        )
-        lgb_preds += (
-            model.predict(X_test, num_iteration=model.best_iteration) / n_fold
-        )
+        lgb_oof[valid_idx] = model.predict(X_valid, num_iteration=model.best_iteration)
+        lgb_preds += model.predict(X_test, num_iteration=model.best_iteration) / n_fold
         RMSPE = round(rmspe(y_true=y_valid, y_pred=lgb_oof[valid_idx]), 3)
 
         print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
