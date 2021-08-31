@@ -1,0 +1,28 @@
+dataset:
+  path: ../../input/optiver-realized-volatility-prediction
+  test: fea0_test_best.pkl
+  train: fea0_train_best.pkl
+model:
+  fold: 10
+  fold_name: group
+  verbose: 100
+params:
+  bagging_fraction: 0.8795585311974417
+  bagging_freq: 74
+  bagging_seed: 42
+  boosting: gbdt
+  drop_seed: 42
+  feature_fraction: 0.2403950683025824
+  feature_fraction_bynode: 0.15227525095137953
+  feature_fraction_seed: 42
+  lambda_l1: 9.556428757689245
+  lambda_l2: 7.587945476302646
+  learning_rate: 0.13745401188473627
+  max_depth: 3
+  min_data_in_leaf: 875
+  min_sum_hessian_in_leaf: 24.680559213273096
+  n_jobs: -1
+  num_leaves: 819
+  objective: rmse
+  seed: 42
+  verbosity: -1
