@@ -10,6 +10,7 @@ import pandas as pd
 import yaml
 from hydra.utils import to_absolute_path
 from neptune.new.exceptions import NeptuneMissingApiTokenException
+from omegaconf import OmegaConf
 from optuna.integration import LightGBMPruningCallback
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
@@ -80,9 +81,12 @@ class BayesianOptimizer:
         params["verbosity"] = -1
         params["n_jobs"] = -1
 
-        path = to_absolute_path("../../parameters/" + params_name)
+        train_dict = dict(OmegaConf.load("../../config/train/train.yaml"))
+        train_dict["params"] = params
+
+        path = to_absolute_path("../../config/train/" + params_name)
         with open(path, "w") as p:
-            yaml.dump(params, p)
+            yaml.dump(train_dict, p)
 
 
 def lgbm_objective(

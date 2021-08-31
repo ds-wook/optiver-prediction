@@ -22,29 +22,7 @@ def _main(cfg: DictConfig):
     X_test["stock_id"] = X_test["stock_id"].astype(int)
 
     # Hyperparammeters (optimized)
-    seed = 2021
-    params = {
-        "learning_rate": 0.1,
-        "lambda_l1": 2,
-        "lambda_l2": 7,
-        "num_leaves": 800,
-        "min_sum_hessian_in_leaf": 20,
-        "feature_fraction": 0.8,
-        "feature_fraction_bynode": 0.8,
-        "bagging_fraction": 0.9,
-        "bagging_freq": 42,
-        "min_data_in_leaf": 700,
-        "max_depth": 4,
-        "seed": seed,
-        "feature_fraction_seed": seed,
-        "bagging_seed": seed,
-        "drop_seed": seed,
-        "data_random_seed": seed,
-        "objective": "rmse",
-        "boosting": "gbdt",
-        "verbosity": -1,
-        "n_jobs": -1,
-    }
+    params = dict(cfg.params)
 
     lgb_oof, lgb_preds = (
         run_group_kfold_lightgbm(

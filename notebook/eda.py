@@ -1,16 +1,12 @@
 # %%
-import hydra
 import pandas as pd
-from omegaconf import DictConfig
 
-
-@hydra.main(config_path="../config/train/", config_name="lgbm_train.yml")
-def _main(cfg: DictConfig):
-    train = pd.read_csv(cfg.dataset.path + "train.csv")
-    print(train)
-
-
-if __name__ == "__main__":
-    _main()
-
+path = "../input/optiver-realized-volatility-prediction/"
+train = pd.read_pickle(path + "fea0_train_best.pkl")
+train.head()
+# %%
+train = pd.read_pickle(path + "fea2_train_best.pkl")
+train.head()
+# %%
+print(train.columns.tolist())
 # %%

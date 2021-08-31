@@ -3,17 +3,13 @@ from functools import partial
 import hydra
 import pandas as pd
 from omegaconf import DictConfig
-from optimization.bayesian import (
-    BayesianOptimizer,
-    group_lgbm_objective,
-    lgbm_objective,
-)
+from tune.bayesian import BayesianOptimizer, group_lgbm_objective, lgbm_objective
 
 
-@hydra.main(config_path="../../config/optimization/", config_name="optiver-optim.yml")
+@hydra.main(config_path="../../config/optimization/", config_name="optiver-optim.yaml")
 def _main(cfg: DictConfig):
     path = hydra.utils.to_absolute_path(cfg.dataset.path) + "/"
-    train = pd.read_pickle(path + "fea_train_best.pkl")
+    train = pd.read_pickle(path + "fea0_train_best.pkl")
 
     # Split features and target
     X = train.drop(["row_id", "target", "time_id"], axis=1)
