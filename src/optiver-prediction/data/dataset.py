@@ -4,6 +4,7 @@ import hydra
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
+from sklearn.cluster import KMeans
 
 data_dir = (
     hydra.utils.to_absolute_path("../../input/optiver-realized-volatility-prediction/")
@@ -330,6 +331,80 @@ def preprocessor(list_stock_ids: List[str], is_train: bool = True) -> pd.DataFra
     # Concatenate all the dataframes that return from Parallel
     df = pd.concat(df, ignore_index=True)
     return df
+
+
+def create_agg_features(train, test):
+
+    # Making agg features
+
+    train_p = pd.read_csv("../input/optiver-realized-volatility-prediction/train.csv")
+    train_p = train_p.pivot(index="time_id", columns="stock_id", values="target")
+    corr = train_p.corr()
+    ids = corr.index
+    kmeans = KMeans(n_clusters=7, random_state=0).fit(corr.values)
+    indexes = []
+    for n in range(7):
+        indexes.append([(x - 1) for x in ((ids + 1) * (kmeans.labels_ == n)) if x > 0])
+
+    mat = []
+    matTest = []
+    n = 0
+    for ind in indexes:
+        new_df = train.loc[train["stock_id"].isin(ind)]
+        new_df = new_df.groupby(["time_id"]).agg(np.nanmean)
+        new_df.loc[:, "stock_id"] = str(n) + "c1"
+        mat.append(new_df)
+        new_df = test.loc[test["stock_id"].isin(ind)]
+        new_df = new_df.groupby(["time_id"]).agg(np.nanmean)
+        new_df.loc[:, "stock_id"] = str(n) + "c1"
+        matTest.append(new_df)
+        n += 1
+
+    mat1 = pd.concat(mat).reset_index()
+    mat1.drop(columns=["target"], inplace=True)
+    mat2 = pd.concat(matTest).reset_index()
+
+    mat2 = pd.concat([mat2, mat1.loc[mat1.time_id == 5]])
+
+    mat1 = mat1.pivot(index="time_id", columns="stock_id")
+    mat1.columns = ["_".join(x) for x in mat1.columns.ravel()]
+    mat1.reset_index(inplace=True)
+
+    mat2 = mat2.pivot(index="time_id", columns="stock_id")
+    mat2.columns = ["_".join(x) for x in mat2.columns.ravel()]
+    mat2.reset_index(inplace=True)
+
+    prefix = [
+        "log_return1_realized_volatility",
+        "total_volume_mean",
+        "trade_size_mean",
+        "trade_order_count_mean",
+        "price_spread_mean",
+        "bid_spread_mean",
+        "ask_spread_mean",
+        "volume_imbalance_mean",
+        "bid_ask_spread_mean",
+        "size_tau2",
+    ]
+    selected_cols = mat1.filter(
+        regex="|".join(f"^{x}.(0|1|3|4|6)c1" for x in prefix)
+    ).columns.tolist()
+    selected_cols.append("time_id")
+
+    train_m = pd.merge(train, mat1[selected_cols], how="left", on="time_id")
+    test_m = pd.merge(test, mat2[selected_cols], how="left", on="time_id")
+
+    # filling missing values with train means
+
+    features = [
+        col
+        for col in train_m.columns.tolist()
+        if col not in ["time_id", "target", "row_id"]
+    ]
+    train_m[features] = train_m[features].fillna(train_m[features].mean())
+    test_m[features] = test_m[features].fillna(train_m[features].mean())
+
+    return train_m, test_m
 
 
 def load_dataset(path: str) -> Tuple:

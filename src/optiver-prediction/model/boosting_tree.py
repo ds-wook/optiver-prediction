@@ -136,7 +136,7 @@ def run_kfold_xgboost(
         )
         # validation
         xgb_oof[valid_idx] = model.predict(X_valid)
-        RMSPE = round(rmspe(y_true=y_valid, y_pred=xgb_oof[valid_idx]), 3)
+        RMSPE = rmspe(y_true=y_valid, y_pred=xgb_oof[valid_idx])
 
         print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
 
