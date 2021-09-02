@@ -25,7 +25,7 @@ def run_kfold_lightgbm(
     verbose: Union[int, bool] = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
 
-    kf = KFold(n_splits=n_fold, random_state=1111, shuffle=True)
+    kf = KFold(n_splits=n_fold, random_state=2021, shuffle=True)
     splits = kf.split(X)
     lgb_oof = np.zeros(X.shape[0])
     lgb_preds = np.zeros(X_test.shape[0])
@@ -54,10 +54,10 @@ def run_kfold_lightgbm(
             params=params,
             train_set=train_dataset,
             valid_sets=[train_dataset, val_dataset],
-            num_boost_round=1600,
-            early_stopping_rounds=25,
+            num_boost_round=1000,
+            early_stopping_rounds=50,
+            verbose_eval=250,
             feval=feval_RMSPE,
-            verbose_eval=100,
             callbacks=[neptune_callback],
         )
 

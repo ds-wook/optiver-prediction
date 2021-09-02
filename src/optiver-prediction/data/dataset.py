@@ -1,10 +1,11 @@
-from typing import List, Tuple
+from typing import Tuple
 
 import hydra
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from sklearn.cluster import KMeans
+from tqdm import tqdm
 
 data_dir = (
     hydra.utils.to_absolute_path("../../input/optiver-realized-volatility-prediction/")
@@ -13,7 +14,7 @@ data_dir = (
 
 
 # Function to calculate first WAP
-def calc_wap1(df: pd.DataFrame) -> pd.Series:
+def calc_wap1(df):
     wap = (df["bid_price1"] * df["ask_size1"] + df["ask_price1"] * df["bid_size1"]) / (
         df["bid_size1"] + df["ask_size1"]
     )
@@ -21,8 +22,22 @@ def calc_wap1(df: pd.DataFrame) -> pd.Series:
 
 
 # Function to calculate second WAP
-def calc_wap2(df: pd.DataFrame) -> pd.Series:
+def calc_wap2(df):
     wap = (df["bid_price2"] * df["ask_size2"] + df["ask_price2"] * df["bid_size2"]) / (
+        df["bid_size2"] + df["ask_size2"]
+    )
+    return wap
+
+
+def calc_wap3(df):
+    wap = (df["bid_price1"] * df["bid_size1"] + df["ask_price1"] * df["ask_size1"]) / (
+        df["bid_size1"] + df["ask_size1"]
+    )
+    return wap
+
+
+def calc_wap4(df):
+    wap = (df["bid_price2"] * df["bid_size2"] + df["ask_price2"] * df["ask_size2"]) / (
         df["bid_size2"] + df["ask_size2"]
     )
     return wap
@@ -30,18 +45,38 @@ def calc_wap2(df: pd.DataFrame) -> pd.Series:
 
 # Function to calculate the log of the return
 # Remember that logb(x / y) = logb(x) - logb(y)
-def log_return(series: pd.Series) -> np.ndarray:
+def log_return(series):
     return np.log(series).diff()
 
 
 # Calculate the realized volatility
-def realized_volatility(series: pd.Series) -> np.ndarray:
+def realized_volatility(series):
     return np.sqrt(np.sum(series ** 2))
 
 
 # Function to count unique elements of a series
-def count_unique(series: pd.Series) -> int:
+def count_unique(series):
     return len(np.unique(series))
+
+
+def realized_quarticity(series):
+    return np.sum(series ** 4) * series.shape[0] / 3
+
+
+def realized_quadpower_quarticity(series):
+    series = series.rolling(window=4).apply(np.product, raw=True)
+    return (np.sum(series) * series.shape[0] * (np.pi ** 2)) / 4
+
+
+def realized_1(series):
+    return np.sqrt(np.sum(series ** 4) / (6 * np.sum(series ** 2)))
+
+
+def realized_2(series):
+    return np.sqrt(
+        ((np.pi ** 2) * np.sum(series.rolling(window=4).apply(np.product, raw=True)))
+        / (8 * np.sum(series ** 2))
+    )
 
 
 # Function to read our base train and test set
@@ -55,23 +90,39 @@ def read_train_test(path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     return train, test
 
 
+# Function to read our base train and test set
+def read_test(path: str) -> pd.DataFrame:
+    test = pd.read_csv(path + "test.csv")
+    # Create a key to merge with book and trade data
+    test["row_id"] = test["stock_id"].astype(str) + "-" + test["time_id"].astype(str)
+    return test
+
+
 # Function to preprocess book data (for each stock id)
-def book_preprocessor(file_path: str) -> pd.DataFrame:
+def book_preprocessor(file_path):
     df = pd.read_parquet(file_path)
     # Calculate Wap
     df["wap1"] = calc_wap1(df)
     df["wap2"] = calc_wap2(df)
+    df["wap3"] = calc_wap3(df)
+    df["wap4"] = calc_wap4(df)
     # Calculate log returns
     df["log_return1"] = df.groupby(["time_id"])["wap1"].apply(log_return)
     df["log_return2"] = df.groupby(["time_id"])["wap2"].apply(log_return)
+    df["log_return3"] = df.groupby(["time_id"])["wap3"].apply(log_return)
+    df["log_return4"] = df.groupby(["time_id"])["wap4"].apply(log_return)
     # Calculate wap balance
     df["wap_balance"] = abs(df["wap1"] - df["wap2"])
     # Calculate spread
     df["price_spread"] = (df["ask_price1"] - df["bid_price1"]) / (
         (df["ask_price1"] + df["bid_price1"]) / 2
     )
+    df["price_spread2"] = (df["ask_price2"] - df["bid_price2"]) / (
+        (df["ask_price2"] + df["bid_price2"]) / 2
+    )
     df["bid_spread"] = df["bid_price1"] - df["bid_price2"]
     df["ask_spread"] = df["ask_price1"] - df["ask_price2"]
+    df["bid_ask_spread"] = abs(df["bid_spread"] - df["ask_spread"])
     df["total_volume"] = (df["ask_size1"] + df["ask_size2"]) + (
         df["bid_size1"] + df["bid_size2"]
     )
@@ -81,25 +132,37 @@ def book_preprocessor(file_path: str) -> pd.DataFrame:
 
     # Dict for aggregations
     create_feature_dict = {
-        "wap1": [np.sum, np.mean, np.std],
-        "wap2": [np.sum, np.mean, np.std],
-        "log_return1": [np.sum, realized_volatility, np.mean, np.std],
-        "log_return2": [np.sum, realized_volatility, np.mean, np.std],
-        "wap_balance": [np.sum, np.mean, np.std],
-        "price_spread": [np.sum, np.mean, np.std],
-        "bid_spread": [np.sum, np.mean, np.std],
-        "ask_spread": [np.sum, np.mean, np.std],
-        "total_volume": [np.sum, np.mean, np.std],
-        "volume_imbalance": [np.sum, np.mean, np.std],
+        "wap1": [np.sum, np.std],
+        "wap2": [np.sum, np.std],
+        "wap3": [np.sum, np.std],
+        "wap4": [np.sum, np.std],
+        "log_return1": [realized_volatility],
+        "log_return2": [realized_volatility],
+        "log_return3": [realized_volatility],
+        "log_return4": [realized_volatility],
+        "wap_balance": [np.sum, np.max],
+        "price_spread": [np.sum, np.max],
+        "price_spread2": [np.sum, np.max],
+        "bid_spread": [np.sum, np.max],
+        "ask_spread": [np.sum, np.max],
+        "total_volume": [np.sum, np.max],
+        "volume_imbalance": [np.sum, np.max],
+        "bid_ask_spread": [np.sum, np.max],
+    }
+    create_feature_dict_time = {
+        "log_return1": [realized_volatility],
+        "log_return2": [realized_volatility],
+        "log_return3": [realized_volatility],
+        "log_return4": [realized_volatility],
     }
 
     # Function to get group stats for different windows (seconds in bucket)
-    def get_stats_window(seconds_in_bucket, add_suffix=False):
+    def get_stats_window(fe_dict, seconds_in_bucket, add_suffix=False):
         # Group by the window
         df_feature = (
             df[df["seconds_in_bucket"] >= seconds_in_bucket]
             .groupby(["time_id"])
-            .agg(create_feature_dict)
+            .agg(fe_dict)
             .reset_index()
         )
         # Rename columns joining suffix
@@ -110,12 +173,24 @@ def book_preprocessor(file_path: str) -> pd.DataFrame:
         return df_feature
 
     # Get the stats for different windows
-    df_feature = get_stats_window(seconds_in_bucket=0, add_suffix=False)
-    df_feature_500 = get_stats_window(seconds_in_bucket=500, add_suffix=True)
-    df_feature_400 = get_stats_window(seconds_in_bucket=400, add_suffix=True)
-    df_feature_300 = get_stats_window(seconds_in_bucket=300, add_suffix=True)
-    df_feature_200 = get_stats_window(seconds_in_bucket=200, add_suffix=True)
-    df_feature_100 = get_stats_window(seconds_in_bucket=100, add_suffix=True)
+    df_feature = get_stats_window(
+        create_feature_dict, seconds_in_bucket=0, add_suffix=False
+    )
+    df_feature_500 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=500, add_suffix=True
+    )
+    df_feature_400 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=400, add_suffix=True
+    )
+    df_feature_300 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=300, add_suffix=True
+    )
+    df_feature_200 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=200, add_suffix=True
+    )
+    df_feature_100 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=100, add_suffix=True
+    )
 
     # Merge all
     df_feature = df_feature.merge(
@@ -154,25 +229,32 @@ def book_preprocessor(file_path: str) -> pd.DataFrame:
 
 
 # Function to preprocess trade data (for each stock id)
-def trade_preprocessor(file_path: str) -> pd.DataFrame:
+def trade_preprocessor(file_path):
     df = pd.read_parquet(file_path)
     df["log_return"] = df.groupby("time_id")["price"].apply(log_return)
-
+    df["amount"] = df["price"] * df["size"]
     # Dict for aggregations
     create_feature_dict = {
         "log_return": [realized_volatility],
         "seconds_in_bucket": [count_unique],
+        "size": [np.sum, np.max, np.min],
+        "order_count": [np.sum, np.max],
+        "amount": [np.sum, np.max, np.min],
+    }
+    create_feature_dict_time = {
+        "log_return": [realized_volatility],
+        "seconds_in_bucket": [count_unique],
         "size": [np.sum],
-        "order_count": [np.mean],
+        "order_count": [np.sum],
     }
 
     # Function to get group stats for different windows (seconds in bucket)
-    def get_stats_window(seconds_in_bucket, add_suffix=False):
+    def get_stats_window(fe_dict, seconds_in_bucket, add_suffix=False):
         # Group by the window
         df_feature = (
             df[df["seconds_in_bucket"] >= seconds_in_bucket]
             .groupby(["time_id"])
-            .agg(create_feature_dict)
+            .agg(fe_dict)
             .reset_index()
         )
         # Rename columns joining suffix
@@ -183,12 +265,80 @@ def trade_preprocessor(file_path: str) -> pd.DataFrame:
         return df_feature
 
     # Get the stats for different windows
-    df_feature = get_stats_window(seconds_in_bucket=0, add_suffix=False)
-    df_feature_500 = get_stats_window(seconds_in_bucket=500, add_suffix=True)
-    df_feature_400 = get_stats_window(seconds_in_bucket=400, add_suffix=True)
-    df_feature_300 = get_stats_window(seconds_in_bucket=300, add_suffix=True)
-    df_feature_200 = get_stats_window(seconds_in_bucket=200, add_suffix=True)
-    df_feature_100 = get_stats_window(seconds_in_bucket=100, add_suffix=True)
+    df_feature = get_stats_window(
+        create_feature_dict, seconds_in_bucket=0, add_suffix=False
+    )
+    df_feature_500 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=500, add_suffix=True
+    )
+    df_feature_400 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=400, add_suffix=True
+    )
+    df_feature_300 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=300, add_suffix=True
+    )
+    df_feature_200 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=200, add_suffix=True
+    )
+    df_feature_100 = get_stats_window(
+        create_feature_dict_time, seconds_in_bucket=100, add_suffix=True
+    )
+
+    def tendency(price, vol):
+        df_diff = np.diff(price)
+        val = (df_diff / price[1:]) * 100
+        power = np.sum(val * vol[1:])
+        return power
+
+    lis = []
+    for n_time_id in df["time_id"].unique():
+        df_id = df[df["time_id"] == n_time_id]
+        tendencyV = tendency(df_id["price"].values, df_id["size"].values)
+        f_max = np.sum(df_id["price"].values > np.mean(df_id["price"].values))
+        f_min = np.sum(df_id["price"].values < np.mean(df_id["price"].values))
+        df_max = np.sum(np.diff(df_id["price"].values) > 0)
+        df_min = np.sum(np.diff(df_id["price"].values) < 0)
+        # new
+        abs_diff = np.median(
+            np.abs(df_id["price"].values - np.mean(df_id["price"].values))
+        )
+        energy = np.mean(df_id["price"].values ** 2)
+        iqr_p = np.percentile(df_id["price"].values, 75) - np.percentile(
+            df_id["price"].values, 25
+        )
+
+        # vol vars
+
+        abs_diff_v = np.median(
+            np.abs(df_id["size"].values - np.mean(df_id["size"].values))
+        )
+        energy_v = np.sum(df_id["size"].values ** 2)
+        iqr_p_v = np.percentile(df_id["size"].values, 75) - np.percentile(
+            df_id["size"].values, 25
+        )
+
+        lis.append(
+            {
+                "time_id": n_time_id,
+                "tendency": tendencyV,
+                "f_max": f_max,
+                "f_min": f_min,
+                "df_max": df_max,
+                "df_min": df_min,
+                "abs_diff": abs_diff,
+                "energy": energy,
+                "iqr_p": iqr_p,
+                "abs_diff_v": abs_diff_v,
+                "energy_v": energy_v,
+                "iqr_p_v": iqr_p_v,
+            }
+        )
+
+    df_lr = pd.DataFrame(lis)
+
+    df_feature = df_feature.merge(
+        df_lr, how="left", left_on="time_id_", right_on="time_id"
+    )
 
     # Merge all
     df_feature = df_feature.merge(
@@ -213,6 +363,7 @@ def trade_preprocessor(file_path: str) -> pd.DataFrame:
             "time_id__400",
             "time_id__300",
             "time_id__200",
+            "time_id",
             "time_id__100",
         ],
         axis=1,
@@ -229,30 +380,20 @@ def trade_preprocessor(file_path: str) -> pd.DataFrame:
 
 
 # Function to get group stats for the stock_id and time_id
-def get_time_stock(df: pd.DataFrame) -> pd.DataFrame:
-    # Get realized volatility columns
-    #     vol_cols = ['log_return1_realized_volatility', 'log_return2_realized_volatility', 'log_return1_realized_volatility_450', 'log_return2_realized_volatility_450',
-    #                 'log_return1_realized_volatility_300', 'log_return2_realized_volatility_300', 'log_return1_realized_volatility_150', 'log_return2_realized_volatility_150',
-    #                 'trade_log_return_realized_volatility', 'trade_log_return_realized_volatility_450', 'trade_log_return_realized_volatility_300', 'trade_log_return_realized_volatility_150']
+def get_time_stock(df):
     vol_cols = [
         "log_return1_realized_volatility",
         "log_return2_realized_volatility",
-        "log_return1_realized_volatility_500",
-        "log_return2_realized_volatility_500",
         "log_return1_realized_volatility_400",
         "log_return2_realized_volatility_400",
         "log_return1_realized_volatility_300",
         "log_return2_realized_volatility_300",
         "log_return1_realized_volatility_200",
         "log_return2_realized_volatility_200",
-        "log_return1_realized_volatility_100",
-        "log_return2_realized_volatility_100",
         "trade_log_return_realized_volatility",
-        "trade_log_return_realized_volatility_500",
         "trade_log_return_realized_volatility_400",
         "trade_log_return_realized_volatility_300",
         "trade_log_return_realized_volatility_200",
-        "trade_log_return_realized_volatility_100",
     ]
 
     # Group by the stock id
@@ -301,7 +442,8 @@ def get_time_stock(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # Funtion to make preprocessing function in parallel (for each stock id)
-def preprocessor(list_stock_ids: List[str], is_train: bool = True) -> pd.DataFrame:
+def preprocessor(list_stock_ids, is_train=True):
+
     # Parrallel for loop
     def for_joblib(stock_id):
         # Train
@@ -333,23 +475,24 @@ def preprocessor(list_stock_ids: List[str], is_train: bool = True) -> pd.DataFra
     return df
 
 
-def create_agg_features(train, test):
-
+def create_agg_features(
+    train: pd.DataFrame, test: pd.DataFrame, path: str
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # Making agg features
-
-    train_p = pd.read_csv("../input/optiver-realized-volatility-prediction/train.csv")
+    train_p = pd.read_csv(path + "train.csv")
     train_p = train_p.pivot(index="time_id", columns="stock_id", values="target")
     corr = train_p.corr()
     ids = corr.index
     kmeans = KMeans(n_clusters=7, random_state=0).fit(corr.values)
-    indexes = []
-    for n in range(7):
-        indexes.append([(x - 1) for x in ((ids + 1) * (kmeans.labels_ == n)) if x > 0])
+    indexes = [
+        [(x - 1) for x in ((ids + 1) * (kmeans.labels_ == n)) if x > 0]
+        for n in tqdm(range(7))
+    ]
 
     mat = []
-    matTest = []
+    mat_test = []
     n = 0
-    for ind in indexes:
+    for ind in tqdm(indexes):
         new_df = train.loc[train["stock_id"].isin(ind)]
         new_df = new_df.groupby(["time_id"]).agg(np.nanmean)
         new_df.loc[:, "stock_id"] = str(n) + "c1"
@@ -357,12 +500,12 @@ def create_agg_features(train, test):
         new_df = test.loc[test["stock_id"].isin(ind)]
         new_df = new_df.groupby(["time_id"]).agg(np.nanmean)
         new_df.loc[:, "stock_id"] = str(n) + "c1"
-        matTest.append(new_df)
+        mat_test.append(new_df)
         n += 1
 
     mat1 = pd.concat(mat).reset_index()
     mat1.drop(columns=["target"], inplace=True)
-    mat2 = pd.concat(matTest).reset_index()
+    mat2 = pd.concat(mat_test).reset_index()
 
     mat2 = pd.concat([mat2, mat1.loc[mat1.time_id == 5]])
 
@@ -387,7 +530,7 @@ def create_agg_features(train, test):
         "size_tau2",
     ]
     selected_cols = mat1.filter(
-        regex="|".join(f"^{x}.(0|1|3|4|6)c1" for x in prefix)
+        regex="|".join(f"^{x}.(0|1|3|4|6)c1" for x in tqdm(prefix))
     ).columns.tolist()
     selected_cols.append("time_id")
 
@@ -407,15 +550,60 @@ def create_agg_features(train, test):
     return train_m, test_m
 
 
-def load_dataset(path: str) -> Tuple:
-    # Read train and test
-    train, test = read_train_test(path)
+# replace by order sum (tau)
+def add_tau_feature(
+    train: pd.DataFrame, test: pd.DataFrame
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    train["size_tau"] = np.sqrt(1 / train["trade_seconds_in_bucket_count_unique"])
+    test["size_tau"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique"])
+    # train['size_tau_450'] = np.sqrt( 1/ train['trade_seconds_in_bucket_count_unique_450'] )
+    # test['size_tau_450'] = np.sqrt( 1/ test['trade_seconds_in_bucket_count_unique_450'] )
+    train["size_tau_400"] = np.sqrt(
+        1 / train["trade_seconds_in_bucket_count_unique_400"]
+    )
+    test["size_tau_400"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique_400"])
+    train["size_tau_300"] = np.sqrt(
+        1 / train["trade_seconds_in_bucket_count_unique_300"]
+    )
+    test["size_tau_300"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique_300"])
+    # train['size_tau_150'] = np.sqrt( 1/ train['trade_seconds_in_bucket_count_unique_150'] )
+    # test['size_tau_150'] = np.sqrt( 1/ test['trade_seconds_in_bucket_count_unique_150'] )
+    train["size_tau_200"] = np.sqrt(
+        1 / train["trade_seconds_in_bucket_count_unique_200"]
+    )
+    test["size_tau_200"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique_200"])
+    train["size_tau2"] = np.sqrt(1 / train["trade_order_count_sum"])
+    test["size_tau2"] = np.sqrt(1 / test["trade_order_count_sum"])
+    # train['size_tau2_450'] = np.sqrt( 0.25/ train['trade_order_count_sum'] )
+    # test['size_tau2_450'] = np.sqrt( 0.25/ test['trade_order_count_sum'] )
+    train["size_tau2_400"] = np.sqrt(0.33 / train["trade_order_count_sum"])
+    test["size_tau2_400"] = np.sqrt(0.33 / test["trade_order_count_sum"])
+    train["size_tau2_300"] = np.sqrt(0.5 / train["trade_order_count_sum"])
+    test["size_tau2_300"] = np.sqrt(0.5 / test["trade_order_count_sum"])
+    # train['size_tau2_150'] = np.sqrt( 0.75/ train['trade_order_count_sum'] )
+    # test['size_tau2_150'] = np.sqrt( 0.75/ test['trade_order_count_sum'] )
+    train["size_tau2_200"] = np.sqrt(0.66 / train["trade_order_count_sum"])
+    test["size_tau2_200"] = np.sqrt(0.66 / test["trade_order_count_sum"])
 
-    # Get unique stock ids
-    train_stock_ids = train["stock_id"].unique()
-    # Preprocess them using Parallel and our single stock id functions
-    train_ = preprocessor(train_stock_ids, is_train=True)
-    train = train.merge(train_, on=["row_id"], how="left")
+    # delta tau
+    train["size_tau2_d"] = train["size_tau2_400"] - train["size_tau2"]
+    test["size_tau2_d"] = test["size_tau2_400"] - test["size_tau2"]
+
+    return train, test
+
+
+def load_dataset(path: str, train_name: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    # Read train and test
+    # train, test = read_train_test(path)
+    # Read train and test
+    train = pd.read_pickle(path + train_name)
+    test = read_test(path)
+
+    # # Get unique stock ids
+    # train_stock_ids = train["stock_id"].unique()
+    # # Preprocess them using Parallel and our single stock id functions
+    # train_ = preprocessor(train_stock_ids, is_train=True)
+    # train = train.merge(train_, on=["row_id"], how="left")
 
     # Get unique stock ids
     test_stock_ids = test["stock_id"].unique()
@@ -424,7 +612,16 @@ def load_dataset(path: str) -> Tuple:
     test = test.merge(test_, on=["row_id"], how="left")
 
     # Get group stats of time_id and stock_id
-    train = get_time_stock(train)
     test = get_time_stock(test)
 
+    # Get group stats of time_id and stock_id
+    # train = get_time_stock(train)
+    test = get_time_stock(test)
+
+    print(f"Before Train Features: {train.shape}")
+
+    train, test = create_agg_features(train, test, path)
+    train, test = add_tau_feature(train, test)
+
+    print(f"After Train Features: {train.shape}")
     return train, test

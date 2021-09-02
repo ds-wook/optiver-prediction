@@ -5,7 +5,7 @@ dataset:
 
 model:
   verbose: 100
-  fold: 10
+  fold: 5
   fold_name: "group"
 
 params:
