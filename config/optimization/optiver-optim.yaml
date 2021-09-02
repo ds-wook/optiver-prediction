@@ -1,10 +1,9 @@
 dataset:
   path: "../../input/optiver-realized-volatility-prediction/"
-
+  train: "train.pkl"
 optimization:
   trials: 100
   params: best_lgbm_params.yaml
-
 model:
-  fold: 10
+  fold: 5
   fold_name: "group"
