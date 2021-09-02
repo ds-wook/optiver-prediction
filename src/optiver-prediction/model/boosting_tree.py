@@ -54,7 +54,7 @@ def run_kfold_lightgbm(
             params=params,
             train_set=train_dataset,
             valid_sets=[train_dataset, val_dataset],
-            num_boost_round=1000,
+            num_boost_round=10000,
             early_stopping_rounds=50,
             verbose_eval=250,
             feval=feval_RMSPE,

@@ -14,7 +14,7 @@ data_dir = (
 
 
 # Function to calculate first WAP
-def calc_wap1(df):
+def calc_wap1(df: pd.DataFrame) -> pd.Series:
     wap = (df["bid_price1"] * df["ask_size1"] + df["ask_price1"] * df["bid_size1"]) / (
         df["bid_size1"] + df["ask_size1"]
     )
@@ -22,21 +22,21 @@ def calc_wap1(df):
 
 
 # Function to calculate second WAP
-def calc_wap2(df):
+def calc_wap2(df: pd.DataFrame) -> pd.Series:
     wap = (df["bid_price2"] * df["ask_size2"] + df["ask_price2"] * df["bid_size2"]) / (
         df["bid_size2"] + df["ask_size2"]
     )
     return wap
 
 
-def calc_wap3(df):
+def calc_wap3(df: pd.DataFrame) -> pd.Series:
     wap = (df["bid_price1"] * df["bid_size1"] + df["ask_price1"] * df["ask_size1"]) / (
         df["bid_size1"] + df["ask_size1"]
     )
     return wap
 
 
-def calc_wap4(df):
+def calc_wap4(df: pd.DataFrame) -> pd.Series:
     wap = (df["bid_price2"] * df["bid_size2"] + df["ask_price2"] * df["ask_size2"]) / (
         df["bid_size2"] + df["ask_size2"]
     )
@@ -45,34 +45,34 @@ def calc_wap4(df):
 
 # Function to calculate the log of the return
 # Remember that logb(x / y) = logb(x) - logb(y)
-def log_return(series):
+def log_return(series: pd.DataFrame) -> np.ndarray:
     return np.log(series).diff()
 
 
 # Calculate the realized volatility
-def realized_volatility(series):
+def realized_volatility(series: pd.DataFrame) -> np.ndarray:
     return np.sqrt(np.sum(series ** 2))
 
 
 # Function to count unique elements of a series
-def count_unique(series):
+def count_unique(series: pd.DataFrame) -> np.ndarray:
     return len(np.unique(series))
 
 
-def realized_quarticity(series):
+def realized_quarticity(series: pd.DataFrame) -> np.ndarray:
     return np.sum(series ** 4) * series.shape[0] / 3
 
 
-def realized_quadpower_quarticity(series):
+def realized_quadpower_quarticity(series: pd.DataFrame) -> np.ndarray:
     series = series.rolling(window=4).apply(np.product, raw=True)
     return (np.sum(series) * series.shape[0] * (np.pi ** 2)) / 4
 
 
-def realized_1(series):
+def realized_1(series: pd.DataFrame) -> np.ndarray:
     return np.sqrt(np.sum(series ** 4) / (6 * np.sum(series ** 2)))
 
 
-def realized_2(series):
+def realized_2(series: pd.DataFrame) -> np.ndarray:
     return np.sqrt(
         ((np.pi ** 2) * np.sum(series.rolling(window=4).apply(np.product, raw=True)))
         / (8 * np.sum(series ** 2))
@@ -99,7 +99,7 @@ def read_test(path: str) -> pd.DataFrame:
 
 
 # Function to preprocess book data (for each stock id)
-def book_preprocessor(file_path):
+def book_preprocessor(file_path: str):
     df = pd.read_parquet(file_path)
     # Calculate Wap
     df["wap1"] = calc_wap1(df)
@@ -475,6 +475,48 @@ def preprocessor(list_stock_ids, is_train=True):
     return df
 
 
+# replace by order sum (tau)
+def add_tau_feature(
+    train: pd.DataFrame, test: pd.DataFrame
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    train["size_tau"] = np.sqrt(1 / train["trade_seconds_in_bucket_count_unique"])
+    test["size_tau"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique"])
+    # train['size_tau_450'] = np.sqrt( 1/ train['trade_seconds_in_bucket_count_unique_450'] )
+    # test['size_tau_450'] = np.sqrt( 1/ test['trade_seconds_in_bucket_count_unique_450'] )
+    train["size_tau_400"] = np.sqrt(
+        1 / train["trade_seconds_in_bucket_count_unique_400"]
+    )
+    test["size_tau_400"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique_400"])
+    train["size_tau_300"] = np.sqrt(
+        1 / train["trade_seconds_in_bucket_count_unique_300"]
+    )
+    test["size_tau_300"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique_300"])
+    # train['size_tau_150'] = np.sqrt( 1/ train['trade_seconds_in_bucket_count_unique_150'] )
+    # test['size_tau_150'] = np.sqrt( 1/ test['trade_seconds_in_bucket_count_unique_150'] )
+    train["size_tau_200"] = np.sqrt(
+        1 / train["trade_seconds_in_bucket_count_unique_200"]
+    )
+    test["size_tau_200"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique_200"])
+    train["size_tau2"] = np.sqrt(1 / train["trade_order_count_sum"])
+    test["size_tau2"] = np.sqrt(1 / test["trade_order_count_sum"])
+    # train['size_tau2_450'] = np.sqrt( 0.25/ train['trade_order_count_sum'] )
+    # test['size_tau2_450'] = np.sqrt( 0.25/ test['trade_order_count_sum'] )
+    train["size_tau2_400"] = np.sqrt(0.33 / train["trade_order_count_sum"])
+    test["size_tau2_400"] = np.sqrt(0.33 / test["trade_order_count_sum"])
+    train["size_tau2_300"] = np.sqrt(0.5 / train["trade_order_count_sum"])
+    test["size_tau2_300"] = np.sqrt(0.5 / test["trade_order_count_sum"])
+    # train['size_tau2_150'] = np.sqrt( 0.75/ train['trade_order_count_sum'] )
+    # test['size_tau2_150'] = np.sqrt( 0.75/ test['trade_order_count_sum'] )
+    train["size_tau2_200"] = np.sqrt(0.66 / train["trade_order_count_sum"])
+    test["size_tau2_200"] = np.sqrt(0.66 / test["trade_order_count_sum"])
+
+    # delta tau
+    train["size_tau2_d"] = train["size_tau2_400"] - train["size_tau2"]
+    test["size_tau2_d"] = test["size_tau2_400"] - test["size_tau2"]
+
+    return train, test
+
+
 def create_agg_features(
     train: pd.DataFrame, test: pd.DataFrame, path: str
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -550,60 +592,15 @@ def create_agg_features(
     return train_m, test_m
 
 
-# replace by order sum (tau)
-def add_tau_feature(
-    train: pd.DataFrame, test: pd.DataFrame
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    train["size_tau"] = np.sqrt(1 / train["trade_seconds_in_bucket_count_unique"])
-    test["size_tau"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique"])
-    # train['size_tau_450'] = np.sqrt( 1/ train['trade_seconds_in_bucket_count_unique_450'] )
-    # test['size_tau_450'] = np.sqrt( 1/ test['trade_seconds_in_bucket_count_unique_450'] )
-    train["size_tau_400"] = np.sqrt(
-        1 / train["trade_seconds_in_bucket_count_unique_400"]
-    )
-    test["size_tau_400"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique_400"])
-    train["size_tau_300"] = np.sqrt(
-        1 / train["trade_seconds_in_bucket_count_unique_300"]
-    )
-    test["size_tau_300"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique_300"])
-    # train['size_tau_150'] = np.sqrt( 1/ train['trade_seconds_in_bucket_count_unique_150'] )
-    # test['size_tau_150'] = np.sqrt( 1/ test['trade_seconds_in_bucket_count_unique_150'] )
-    train["size_tau_200"] = np.sqrt(
-        1 / train["trade_seconds_in_bucket_count_unique_200"]
-    )
-    test["size_tau_200"] = np.sqrt(1 / test["trade_seconds_in_bucket_count_unique_200"])
-    train["size_tau2"] = np.sqrt(1 / train["trade_order_count_sum"])
-    test["size_tau2"] = np.sqrt(1 / test["trade_order_count_sum"])
-    # train['size_tau2_450'] = np.sqrt( 0.25/ train['trade_order_count_sum'] )
-    # test['size_tau2_450'] = np.sqrt( 0.25/ test['trade_order_count_sum'] )
-    train["size_tau2_400"] = np.sqrt(0.33 / train["trade_order_count_sum"])
-    test["size_tau2_400"] = np.sqrt(0.33 / test["trade_order_count_sum"])
-    train["size_tau2_300"] = np.sqrt(0.5 / train["trade_order_count_sum"])
-    test["size_tau2_300"] = np.sqrt(0.5 / test["trade_order_count_sum"])
-    # train['size_tau2_150'] = np.sqrt( 0.75/ train['trade_order_count_sum'] )
-    # test['size_tau2_150'] = np.sqrt( 0.75/ test['trade_order_count_sum'] )
-    train["size_tau2_200"] = np.sqrt(0.66 / train["trade_order_count_sum"])
-    test["size_tau2_200"] = np.sqrt(0.66 / test["trade_order_count_sum"])
-
-    # delta tau
-    train["size_tau2_d"] = train["size_tau2_400"] - train["size_tau2"]
-    test["size_tau2_d"] = test["size_tau2_400"] - test["size_tau2"]
-
-    return train, test
-
-
 def load_dataset(path: str, train_name: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # Read train and test
-    # train, test = read_train_test(path)
-    # Read train and test
-    train = pd.read_pickle(path + train_name)
-    test = read_test(path)
+    train, test = read_train_test(path)
 
-    # # Get unique stock ids
-    # train_stock_ids = train["stock_id"].unique()
-    # # Preprocess them using Parallel and our single stock id functions
-    # train_ = preprocessor(train_stock_ids, is_train=True)
-    # train = train.merge(train_, on=["row_id"], how="left")
+    # Get unique stock ids
+    train_stock_ids = train["stock_id"].unique()
+    # Preprocess them using Parallel and our single stock id functions
+    train_ = preprocessor(train_stock_ids, is_train=True)
+    train = train.merge(train_, on=["row_id"], how="left")
 
     # Get unique stock ids
     test_stock_ids = test["stock_id"].unique()
@@ -612,16 +609,16 @@ def load_dataset(path: str, train_name: str) -> Tuple[pd.DataFrame, pd.DataFrame
     test = test.merge(test_, on=["row_id"], how="left")
 
     # Get group stats of time_id and stock_id
-    test = get_time_stock(test)
-
-    # Get group stats of time_id and stock_id
-    # train = get_time_stock(train)
+    train = get_time_stock(train)
     test = get_time_stock(test)
 
     print(f"Before Train Features: {train.shape}")
-
-    train, test = create_agg_features(train, test, path)
+    print(f"Before Test Features: {test.shape}")
     train, test = add_tau_feature(train, test)
+    print(f"Before Train Features: {train.shape}")
+    print(f"Before Test Features: {test.shape}")
+    train, test = create_agg_features(train, test, path)
 
     print(f"After Train Features: {train.shape}")
+    print(f"After Test Features: {test.shape}")
     return train, test

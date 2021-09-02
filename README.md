@@ -11,6 +11,9 @@ Apply your data science skills to make financial markets better
 |LightGBM(10-group kfold)|0.22188|0.21173|-|
 |XGBoost(10-group kfold)|-|-|-|
 
+### Importance
+![split](https://user-images.githubusercontent.com/46340424/131856956-b1164a64-7e97-41cc-a0be-e0f4c214f5f9.png)
+
 ### Requirements
 + numpy
 + pandas
