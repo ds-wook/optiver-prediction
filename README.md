@@ -14,6 +14,9 @@ Apply your data science skills to make financial markets better
 ### Importance
 ![split](https://user-images.githubusercontent.com/46340424/131856956-b1164a64-7e97-41cc-a0be-e0f4c214f5f9.png)
 
+### Visualization
+![fold_5_valid_1_RMSPE](https://user-images.githubusercontent.com/46340424/131930734-e99877b8-d9fc-4342-b72f-801f71d40c51.png)
+
 ### Requirements
 + numpy
 + pandas
