@@ -40,3 +40,9 @@ def squared_percentage(
 def feval_rmspe(predt: np.ndarray, dtrain: xgb.DMatrix) -> Tuple[str, np.ndarray]:
     y = dtrain.get_label()
     return "RMSPE", np.sqrt(np.mean(np.square((y - predt) / y)))
+
+
+def feval_metric(
+    y_true: np.ndarray, y_pred: np.ndarray
+) -> Tuple[Union[str, float, bool]]:
+    return "RMSPE", rmspe(y_true=y_true, y_pred=y_pred), False

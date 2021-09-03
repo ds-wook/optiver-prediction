@@ -561,6 +561,7 @@ def create_agg_features(
 
     prefix = [
         "log_return1_realized_volatility",
+        "log_return1_realized_quadpower_quarticity",
         "total_volume_mean",
         "trade_size_mean",
         "trade_order_count_mean",
@@ -592,7 +593,7 @@ def create_agg_features(
     return train_m, test_m
 
 
-def load_dataset(path: str, train_name: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def load_dataset(path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # Read train and test
     train, test = read_train_test(path)
 
