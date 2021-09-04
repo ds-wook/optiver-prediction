@@ -27,7 +27,7 @@ def _main(cfg: DictConfig):
     X["stock_id"] = X["stock_id"].astype(int)
     X_test["stock_id"] = X_test["stock_id"].astype(int)
 
-    lgb_oof, lgb_preds = (
+    lgb_preds = (
         train_group_kfold_lightgbm(
             cfg.model.fold,
             X,

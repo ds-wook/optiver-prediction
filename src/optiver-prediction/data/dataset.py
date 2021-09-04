@@ -561,11 +561,11 @@ def create_agg_features(
     mat2 = pd.concat([mat2, mat1.loc[mat1.time_id == 5]])
 
     mat1 = mat1.pivot(index="time_id", columns="stock_id")
-    mat1.columns = ["_".join(x) for x in mat1.columns.tolist()]
+    mat1.columns = ["_".join(x) for x in tqdm(mat1.columns.tolist())]
     mat1.reset_index(inplace=True)
 
     mat2 = mat2.pivot(index="time_id", columns="stock_id")
-    mat2.columns = ["_".join(x) for x in mat2.columns.tolist()]
+    mat2.columns = ["_".join(x) for x in tqdm(mat2.columns.tolist())]
     mat2.reset_index(inplace=True)
 
     prefix = [

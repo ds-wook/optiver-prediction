@@ -169,27 +169,19 @@ def group_lgbm_objective(
 ) -> float:
     params = {
         "learning_rate": trial.suggest_float("learning_rate", 1e-02, 2e-01),
-        "lambda_l1": trial.suggest_float("lambda_l1", 1, 10),
-        "lambda_l2": trial.suggest_float("lambda_l2", 1, 10),
+        "reg_alpha": trial.suggest_float("reg_alpha", 1, 10),
+        "reg_lambda": trial.suggest_float("reg_lambda", 1, 10),
         "num_leaves": trial.suggest_int("num_leaves", 512, 1024),
-        "min_sum_hessian_in_leaf": trial.suggest_float(
-            "min_sum_hessian_in_leaf", 20, 50
-        ),
+        "min_child_weight": trial.suggest_float("min_child_weight", 20, 50),
         "feature_fraction": trial.suggest_uniform("feature_fraction", 0.1, 1),
-        "feature_fraction_bynode": trial.suggest_uniform(
-            "feature_fraction_bynode", 0.1, 1
-        ),
-        "bagging_fraction": trial.suggest_uniform("bagging_fraction", 0.1, 1),
-        "bagging_freq": trial.suggest_int("bagging_freq", 35, 100),
-        "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 512, 1024),
+        "min_split_gain": trial.suggest_uniform("min_split_gain", 0.1, 1),
+        "subsample": trial.suggest_uniform("subsample", 0.1, 1),
+        "subsample_freq": trial.suggest_int("subsample_freq", 35, 100),
+        "min_child_samples": trial.suggest_int("min_child_samples", 512, 1024),
         "max_depth": trial.suggest_int("max_depth", 3, 10),
-        "seed": 42,
-        "feature_fraction_seed": 42,
-        "bagging_seed": 42,
-        "drop_seed": 42,
-        "data_random_seed": 42,
+        "n_estimators": 10000,
         "objective": "rmse",
-        "boosting": "gbdt",
+        "boosting_type": "gbdt",
         "verbosity": -1,
         "n_jobs": -1,
     }
