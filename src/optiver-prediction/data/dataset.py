@@ -1,16 +1,13 @@
 from typing import Tuple
 
-import hydra
 import numpy as np
 import pandas as pd
+from hydra.utils import to_absolute_path
 from joblib import Parallel, delayed
 from sklearn.cluster import KMeans
 from tqdm import tqdm
 
-data_dir = (
-    hydra.utils.to_absolute_path("../../input/optiver-realized-volatility-prediction/")
-    + "/"
-)
+data_dir = to_absolute_path("../../input/optiver-realized-volatility-prediction/") + "/"
 
 
 # Function to calculate first WAP
@@ -136,10 +133,10 @@ def book_preprocessor(file_path: str):
         "wap2": [np.sum, np.std],
         "wap3": [np.sum, np.std],
         "wap4": [np.sum, np.std],
-        "log_return1": [realized_volatility],
-        "log_return2": [realized_volatility],
-        "log_return3": [realized_volatility],
-        "log_return4": [realized_volatility],
+        "log_return1": [realized_volatility, realized_quadpower_quarticity],
+        "log_return2": [realized_volatility, realized_quadpower_quarticity],
+        "log_return3": [realized_volatility, realized_quadpower_quarticity],
+        "log_return4": [realized_volatility, realized_quadpower_quarticity],
         "wap_balance": [np.sum, np.max],
         "price_spread": [np.sum, np.max],
         "price_spread2": [np.sum, np.max],
@@ -150,10 +147,10 @@ def book_preprocessor(file_path: str):
         "bid_ask_spread": [np.sum, np.max],
     }
     create_feature_dict_time = {
-        "log_return1": [realized_volatility],
-        "log_return2": [realized_volatility],
-        "log_return3": [realized_volatility],
-        "log_return4": [realized_volatility],
+        "log_return1": [realized_volatility, realized_quadpower_quarticity],
+        "log_return2": [realized_volatility, realized_quadpower_quarticity],
+        "log_return3": [realized_volatility, realized_quadpower_quarticity],
+        "log_return4": [realized_volatility, realized_quadpower_quarticity],
     }
 
     # Function to get group stats for different windows (seconds in bucket)
@@ -235,14 +232,14 @@ def trade_preprocessor(file_path):
     df["amount"] = df["price"] * df["size"]
     # Dict for aggregations
     create_feature_dict = {
-        "log_return": [realized_volatility],
+        "log_return": [realized_volatility, realized_quadpower_quarticity],
         "seconds_in_bucket": [count_unique],
         "size": [np.sum, np.max, np.min],
         "order_count": [np.sum, np.max],
         "amount": [np.sum, np.max, np.min],
     }
     create_feature_dict_time = {
-        "log_return": [realized_volatility],
+        "log_return": [realized_volatility, realized_quadpower_quarticity],
         "seconds_in_bucket": [count_unique],
         "size": [np.sum],
         "order_count": [np.sum],
@@ -383,17 +380,29 @@ def trade_preprocessor(file_path):
 def get_time_stock(df):
     vol_cols = [
         "log_return1_realized_volatility",
+        "log_return1_realized_quadpower_quarticity",
         "log_return2_realized_volatility",
+        "log_return2_realized_quadpower_quarticity",
         "log_return1_realized_volatility_400",
+        "log_return1_realized_quadpower_quarticity_400",
         "log_return2_realized_volatility_400",
+        "log_return2_realized_quadpower_quarticity_400",
         "log_return1_realized_volatility_300",
+        "log_return1_realized_quadpower_quarticity_300",
         "log_return2_realized_volatility_300",
+        "log_return2_realized_quadpower_quarticity_300",
         "log_return1_realized_volatility_200",
+        "log_return1_realized_quadpower_quarticity_200",
         "log_return2_realized_volatility_200",
+        "log_return2_realized_quadpower_quarticity_200",
         "trade_log_return_realized_volatility",
         "trade_log_return_realized_volatility_400",
         "trade_log_return_realized_volatility_300",
         "trade_log_return_realized_volatility_200",
+        "trade_log_return_realized_quadpower_quarticity",
+        "trade_log_return_realized_quadpower_quarticity_400",
+        "trade_log_return_realized_quadpower_quarticity_300",
+        "trade_log_return_realized_quadpower_quarticity_200",
     ]
 
     # Group by the stock id
@@ -552,11 +561,11 @@ def create_agg_features(
     mat2 = pd.concat([mat2, mat1.loc[mat1.time_id == 5]])
 
     mat1 = mat1.pivot(index="time_id", columns="stock_id")
-    mat1.columns = ["_".join(x) for x in mat1.columns.ravel()]
+    mat1.columns = ["_".join(x) for x in mat1.columns.tolist()]
     mat1.reset_index(inplace=True)
 
     mat2 = mat2.pivot(index="time_id", columns="stock_id")
-    mat2.columns = ["_".join(x) for x in mat2.columns.ravel()]
+    mat2.columns = ["_".join(x) for x in mat2.columns.tolist()]
     mat2.reset_index(inplace=True)
 
     prefix = [

@@ -9,6 +9,7 @@ model:
   fold_name: "group"
 
 params:
+  n_estimators: 10000
   subsample: 0.8339152856093507
   subsample_freq: 81
   boosting_type: gbdt
@@ -23,5 +24,4 @@ params:
   n_jobs: -1
   num_leaves: 1018
   objective: rmse
-  seed: 42
   verbosity: -1
