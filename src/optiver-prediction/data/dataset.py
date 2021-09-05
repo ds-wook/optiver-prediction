@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -133,10 +133,10 @@ def book_preprocessor(file_path: str):
         "wap2": [np.sum, np.std],
         "wap3": [np.sum, np.std],
         "wap4": [np.sum, np.std],
-        "log_return1": [realized_volatility, realized_quadpower_quarticity],
-        "log_return2": [realized_volatility, realized_quadpower_quarticity],
-        "log_return3": [realized_volatility, realized_quadpower_quarticity],
-        "log_return4": [realized_volatility, realized_quadpower_quarticity],
+        "log_return1": [realized_volatility],
+        "log_return2": [realized_volatility],
+        "log_return3": [realized_volatility],
+        "log_return4": [realized_volatility],
         "wap_balance": [np.sum, np.max],
         "price_spread": [np.sum, np.max],
         "price_spread2": [np.sum, np.max],
@@ -147,14 +147,16 @@ def book_preprocessor(file_path: str):
         "bid_ask_spread": [np.sum, np.max],
     }
     create_feature_dict_time = {
-        "log_return1": [realized_volatility, realized_quadpower_quarticity],
-        "log_return2": [realized_volatility, realized_quadpower_quarticity],
-        "log_return3": [realized_volatility, realized_quadpower_quarticity],
-        "log_return4": [realized_volatility, realized_quadpower_quarticity],
+        "log_return1": [realized_volatility],
+        "log_return2": [realized_volatility],
+        "log_return3": [realized_volatility],
+        "log_return4": [realized_volatility],
     }
 
     # Function to get group stats for different windows (seconds in bucket)
-    def get_stats_window(fe_dict, seconds_in_bucket, add_suffix=False):
+    def get_stats_window(
+        fe_dict: Dict[str, List[Any]], seconds_in_bucket: int, add_suffix: bool = False
+    ) -> pd.DataFrame:
         # Group by the window
         df_feature = (
             df[df["seconds_in_bucket"] >= seconds_in_bucket]
@@ -226,20 +228,20 @@ def book_preprocessor(file_path: str):
 
 
 # Function to preprocess trade data (for each stock id)
-def trade_preprocessor(file_path):
+def trade_preprocessor(file_path: str) -> pd.DataFrame:
     df = pd.read_parquet(file_path)
     df["log_return"] = df.groupby("time_id")["price"].apply(log_return)
     df["amount"] = df["price"] * df["size"]
     # Dict for aggregations
     create_feature_dict = {
-        "log_return": [realized_volatility, realized_quadpower_quarticity],
+        "log_return": [realized_volatility],
         "seconds_in_bucket": [count_unique],
         "size": [np.sum, np.max, np.min],
         "order_count": [np.sum, np.max],
         "amount": [np.sum, np.max, np.min],
     }
     create_feature_dict_time = {
-        "log_return": [realized_volatility, realized_quadpower_quarticity],
+        "log_return": [realized_volatility],
         "seconds_in_bucket": [count_unique],
         "size": [np.sum],
         "order_count": [np.sum],
@@ -281,7 +283,7 @@ def trade_preprocessor(file_path):
         create_feature_dict_time, seconds_in_bucket=100, add_suffix=True
     )
 
-    def tendency(price, vol):
+    def tendency(price: np.ndarray, vol: np.ndarray) -> float:
         df_diff = np.diff(price)
         val = (df_diff / price[1:]) * 100
         power = np.sum(val * vol[1:])
@@ -377,32 +379,20 @@ def trade_preprocessor(file_path):
 
 
 # Function to get group stats for the stock_id and time_id
-def get_time_stock(df):
+def get_time_stock(df: pd.DataFrame) -> pd.DataFrame:
     vol_cols = [
         "log_return1_realized_volatility",
-        "log_return1_realized_quadpower_quarticity",
         "log_return2_realized_volatility",
-        "log_return2_realized_quadpower_quarticity",
         "log_return1_realized_volatility_400",
-        "log_return1_realized_quadpower_quarticity_400",
         "log_return2_realized_volatility_400",
-        "log_return2_realized_quadpower_quarticity_400",
         "log_return1_realized_volatility_300",
-        "log_return1_realized_quadpower_quarticity_300",
         "log_return2_realized_volatility_300",
-        "log_return2_realized_quadpower_quarticity_300",
         "log_return1_realized_volatility_200",
-        "log_return1_realized_quadpower_quarticity_200",
         "log_return2_realized_volatility_200",
-        "log_return2_realized_quadpower_quarticity_200",
         "trade_log_return_realized_volatility",
         "trade_log_return_realized_volatility_400",
         "trade_log_return_realized_volatility_300",
         "trade_log_return_realized_volatility_200",
-        "trade_log_return_realized_quadpower_quarticity",
-        "trade_log_return_realized_quadpower_quarticity_400",
-        "trade_log_return_realized_quadpower_quarticity_300",
-        "trade_log_return_realized_quadpower_quarticity_200",
     ]
 
     # Group by the stock id
@@ -451,10 +441,10 @@ def get_time_stock(df):
 
 
 # Funtion to make preprocessing function in parallel (for each stock id)
-def preprocessor(list_stock_ids, is_train=True):
+def preprocessor(list_stock_ids: np.ndarray, is_train: bool = True) -> pd.DataFrame:
 
     # Parrallel for loop
-    def for_joblib(stock_id):
+    def for_joblib(stock_id: int) -> pd.DataFrame:
         # Train
         if is_train:
             file_path_book = data_dir + "book_train.parquet/stock_id=" + str(stock_id)
@@ -570,22 +560,20 @@ def create_agg_features(
 
     prefix = [
         "log_return1_realized_volatility",
-        "log_return1_realized_quadpower_quarticity",
-        "total_volume_mean",
-        "trade_size_mean",
-        "trade_order_count_mean",
-        "price_spread_mean",
-        "bid_spread_mean",
-        "ask_spread_mean",
-        "volume_imbalance_mean",
-        "bid_ask_spread_mean",
+        "total_volume_sum",
+        "trade_size_sum",
+        "trade_order_count_sum",
+        "price_spread_sum",
+        "bid_spread_sum",
+        "ask_spread_sum",
+        "volume_imbalance_sum",
+        "bid_ask_spread_sum",
         "size_tau2",
     ]
     selected_cols = mat1.filter(
         regex="|".join(f"^{x}.(0|1|3|4|6)c1" for x in tqdm(prefix))
     ).columns.tolist()
     selected_cols.append("time_id")
-
     train_m = pd.merge(train, mat1[selected_cols], how="left", on="time_id")
     test_m = pd.merge(test, mat2[selected_cols], how="left", on="time_id")
 

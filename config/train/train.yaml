@@ -1,12 +1,12 @@
 dataset:
-  path: "../../input/optiver-realized-volatility-prediction"
-  train: "best_fea_train.pkl"
-  test: "best_fea_test.pkl"
+  path: ../../input/optiver-realized-volatility-prediction
+  train: best_fea_train.pkl
+  test: best_fea_test.pkl
 
 model:
   verbose: 100
   fold: 5
-  fold_name: "group"
+  fold_name: group
 
 params:
   params1:

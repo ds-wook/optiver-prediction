@@ -9,6 +9,7 @@ import optuna
 import pandas as pd
 import yaml
 from hydra.utils import to_absolute_path
+from lightgbm import LGBMRegressor
 from neptune.new.exceptions import NeptuneMissingApiTokenException
 from optuna.integration import LightGBMPruningCallback
 from optuna.pruners import MedianPruner
@@ -16,7 +17,7 @@ from optuna.samplers import TPESampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial, Trial
 from sklearn.model_selection import GroupKFold, KFold
-from utils.utils import feval_RMSPE, rmspe
+from utils.utils import feval_metric, feval_RMSPE, rmspe
 
 warnings.filterwarnings("ignore")
 
@@ -200,26 +201,24 @@ def group_lgbm_objective(
         train_weights = 1 / np.square(y_train)
         val_weights = 1 / np.square(y_valid)
 
-        train_dataset = lgbm.Dataset(
-            X_train, y_train, weight=train_weights, categorical_feature=["stock_id"]
-        )
-        val_dataset = lgbm.Dataset(
-            X_valid, y_valid, weight=val_weights, categorical_feature=["stock_id"]
-        )
         # model
-        model = lgbm.train(
-            params=params,
-            train_set=train_dataset,
-            valid_sets=[train_dataset, val_dataset],
-            num_boost_round=10000,
+        model = LGBMRegressor(**params)
+        model.fit(
+            X_train,
+            y_train,
+            eval_set=[(X_train, y_train), (X_valid, y_valid)],
+            eval_metric=feval_metric,
+            sample_weight=train_weights,
+            eval_sample_weight=[val_weights],
             early_stopping_rounds=50,
-            feval=feval_RMSPE,
+            verbose=False,
+            categorical_feature=["stock_id"],
             callbacks=[pruning_callback],
-            verbose_eval=False,
         )
-
         # validation
-        lgbm_oof[valid_idx] = model.predict(X_valid, num_iteration=model.best_iteration)
+        lgbm_oof[valid_idx] = model.predict(
+            X_valid, num_iteration=model.best_iteration_
+        )
 
     RMSPE = rmspe(y, lgbm_oof)
     return RMSPE
