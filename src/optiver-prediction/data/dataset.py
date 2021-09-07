@@ -591,6 +591,95 @@ def create_agg_features(
     return train_m, test_m
 
 
+def network_agg_features(
+    train: pd.DataFrame, test: pd.DataFrame, path: str
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    # Making agg features
+    train_p = pd.read_csv(path + "train.csv")
+    train_p = train_p.pivot(index="time_id", columns="stock_id", values="target")
+    corr = train_p.corr()
+    ids = corr.index
+    kmeans = KMeans(n_clusters=7, random_state=0).fit(corr.values)
+    indexes = [
+        [(x - 1) for x in ((ids + 1) * (kmeans.labels_ == n)) if x > 0]
+        for n in tqdm(range(7))
+    ]
+
+    mat = []
+    mat_test = []
+    n = 0
+    for ind in tqdm(indexes):
+        new_df = train.loc[train["stock_id"].isin(ind)]
+        new_df = new_df.groupby(["time_id"]).agg(np.nanmean)
+        new_df.loc[:, "stock_id"] = str(n) + "c1"
+        mat.append(new_df)
+        new_df = test.loc[test["stock_id"].isin(ind)]
+        new_df = new_df.groupby(["time_id"]).agg(np.nanmean)
+        new_df.loc[:, "stock_id"] = str(n) + "c1"
+        mat_test.append(new_df)
+        n += 1
+
+    mat1 = pd.concat(mat).reset_index()
+    mat1.drop(columns=["target"], inplace=True)
+    mat2 = pd.concat(mat_test).reset_index()
+
+    mat2 = pd.concat([mat2, mat1.loc[mat1.time_id == 5]])
+
+    mat1 = mat1.pivot(index="time_id", columns="stock_id")
+    mat1.columns = ["_".join(x) for x in tqdm(mat1.columns.tolist())]
+    mat1.reset_index(inplace=True)
+
+    mat2 = mat2.pivot(index="time_id", columns="stock_id")
+    mat2.columns = ["_".join(x) for x in tqdm(mat2.columns.tolist())]
+    mat2.reset_index(inplace=True)
+
+    prefix = [
+        "log_return1_realized_volatility",
+        "total_volume_mean",
+        "trade_size_mean",
+        "trade_order_count_mean",
+        "price_spread_mean",
+        "bid_spread_mean",
+        "ask_spread_mean",
+        "volume_imbalance_mean",
+        "bid_ask_spread_mean",
+        "size_tau2",
+    ]
+    selected_cols = mat1.filter(
+        regex="|".join(f"^{x}.(0|1|3|4|6)c1" for x in prefix)
+    ).columns.tolist()
+    selected_cols.append("time_id")
+
+    train_m = pd.merge(train, mat1[selected_cols], how="left", on="time_id")
+    test_m = pd.merge(test, mat2[selected_cols], how="left", on="time_id")
+
+    # filling missing values with train means
+
+    features = [
+        col
+        for col in train_m.columns.tolist()
+        if col not in ["time_id", "target", "row_id"]
+    ]
+    train_m[features] = train_m[features].fillna(train_m[features].mean())
+    test_m[features] = test_m[features].fillna(train_m[features].mean())
+
+    return train_m, test_m
+
+
+# Function to read our base train and test set
+def load_test(path: str) -> pd.DataFrame:
+    test = pd.read_csv(path + "test.csv")
+    # Create a key to merge with book and trade data
+    test["row_id"] = test["stock_id"].astype(str) + "-" + test["time_id"].astype(str)
+    # Get unique stock ids
+    test_stock_ids = test["stock_id"].unique()
+    # Preprocess them using Parallel and our single stock id functions
+    test_ = preprocessor(test_stock_ids, is_train=False)
+    test = test.merge(test_, on=["row_id"], how="left")
+    test = get_time_stock(test)
+    return test
+
+
 def load_dataset(path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # Read train and test
     train, test = read_train_test(path)

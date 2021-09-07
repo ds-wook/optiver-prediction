@@ -7,7 +7,6 @@ import neptune.new as neptune
 import numpy as np
 import pandas as pd
 from hydra.utils import to_absolute_path
-from joblib import load
 from lightgbm import LGBMRegressor
 from neptune.new.integrations import xgboost
 from neptune.new.integrations.lightgbm import NeptuneCallback, create_booster_summary
@@ -375,9 +374,9 @@ def load_lightgbm_model(
 
         # model
         path = to_absolute_path(
-            f"../../models/lgbm_model/sklearn_lgbm_group_kfold{fold}.pkl"
+            f"../../models/lgbm_model/lgbm_group_kfold{fold}.pkl"
         )
-        model = load(path)
+        model = joblib.load(path)
 
         # validation
         lgb_oof[valid_idx] = model.predict(X_valid, num_iteration=model.best_iteration_)
