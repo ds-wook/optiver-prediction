@@ -26,3 +26,4 @@ Apply your data science skills to make financial markets better
 + tensorflow==2.1.5
 + neptune
 + hydra
++ pytorch-tabnet

@@ -1,6 +1,8 @@
 dataset:
   path: "../../input/optiver-realized-volatility-prediction/"
   train: "train.pkl"
+  test: "test.pkl"
+
 optimization:
   trials: 100
   params: best_lgbm_params.yaml

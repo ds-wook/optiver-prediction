@@ -174,7 +174,7 @@ def group_lgbm_objective(
         "reg_lambda": trial.suggest_float("reg_lambda", 1, 10),
         "num_leaves": trial.suggest_int("num_leaves", 512, 1024),
         "min_child_weight": trial.suggest_float("min_child_weight", 20, 50),
-        "feature_fraction": trial.suggest_uniform("feature_fraction", 0.1, 1),
+        "colsample_bytree": trial.suggest_uniform("feature_fraction", 0.1, 1),
         "min_split_gain": trial.suggest_uniform("min_split_gain", 0.1, 1),
         "subsample": trial.suggest_uniform("subsample", 0.1, 1),
         "subsample_freq": trial.suggest_int("subsample_freq", 35, 100),

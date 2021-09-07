@@ -2,6 +2,7 @@ from functools import partial
 
 import hydra
 import pandas as pd
+from data.dataset import add_tau_feature, create_agg_features
 from omegaconf import DictConfig
 from tune.bayesian import BayesianOptimizer, group_lgbm_objective, lgbm_objective
 
@@ -10,7 +11,11 @@ from tune.bayesian import BayesianOptimizer, group_lgbm_objective, lgbm_objectiv
 def _main(cfg: DictConfig):
     path = hydra.utils.to_absolute_path(cfg.dataset.path) + "/"
     train = pd.read_pickle(path + cfg.dataset.train)
+    test = pd.read_pickle(path + cfg.dataset.test)
+    print(train.shape, test.shape)
 
+    train, test = add_tau_feature(train, test)
+    train, test = create_agg_features(train, test, path)
     # Split features and target
     X = train.drop(["row_id", "target", "time_id"], axis=1)
     y = train["target"]
