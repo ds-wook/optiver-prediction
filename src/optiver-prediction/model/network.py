@@ -31,8 +31,8 @@ def train_kfold_tabnet(
             val_ind
         ].values.reshape(-1, 1)
 
-        clf = TabNetRegressor(**params)
-        clf.fit(
+        model = TabNetRegressor(**params)
+        model.fit(
             X_train,
             y_train,
             eval_set=[(X_val, y_val)],
@@ -46,8 +46,8 @@ def train_kfold_tabnet(
             loss_fn=RMSPELoss,
         )
 
-        oof_predictions[val_ind] = clf.predict(X_val)
-        test_predictions += clf.predict(X_test.values).flatten() / n_fold
+        oof_predictions[val_ind] = model.predict(X_val)
+        test_predictions += model.predict(X_test.values).flatten() / n_fold
 
     print(f"OOF score across folds: {rmspe(y, oof_predictions.flatten())}")
     return test_predictions
