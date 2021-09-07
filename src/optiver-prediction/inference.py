@@ -2,7 +2,7 @@ import hydra
 import pandas as pd
 from data.dataset import add_tau_feature, create_agg_features
 from hydra.utils import to_absolute_path
-from model.boosting_tree import run_kfold_lightgbm, train_group_kfold_lightgbm
+from model.boosting_tree import load_lightgbm_model
 from omegaconf import DictConfig
 
 
@@ -21,32 +21,13 @@ def _main(cfg: DictConfig):
     X = train.drop(["row_id", "target", "time_id"], axis=1)
     y = train["target"]
     X_test = test.drop(["row_id", "time_id"], axis=1)
-    group = train.time_id
+    groups = train["time_id"]
 
     # Transform stock id to a numeric value
     X["stock_id"] = X["stock_id"].astype(int)
     X_test["stock_id"] = X_test["stock_id"].astype(int)
 
-    lgb_preds = (
-        train_group_kfold_lightgbm(
-            cfg.model.fold,
-            X,
-            y,
-            X_test,
-            group,
-            dict(cfg.params.params2),
-            cfg.model.verbose,
-        )
-        if cfg.model.fold_name == "group"
-        else run_kfold_lightgbm(
-            cfg.model.fold,
-            X,
-            y,
-            X_test,
-            dict(cfg.params.params1),
-            cfg.model.verbose,
-        )
-    )
+    lgb_preds = load_lightgbm_model(5, X, y, X_test, groups=groups)
     # Save test predictions
     test["target"] = lgb_preds
     test[["row_id", "target"]].to_csv("submission.csv", index=False)

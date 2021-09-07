@@ -6,9 +6,9 @@ Apply your data science skills to make financial markets better
 |Score|CV|Public LB|private LB|
 |-----|--|------|-------|
 |NN(5-kfold)|0.21241|0.20291|-|
-|LightGBM(5-kfold)|0.19154||-|
+|LightGBM(5-kfold)|0.19076|0.20465|-|
 |XGBoost(10-kfold)|0.21026|0.21137|-|
-|LightGBM(10-group kfold)|0.22188|0.21173|-|
+|LightGBM(5-group kfold)|0.215995|0.21173|-|
 |XGBoost(10-group kfold)|-|-|-|
 
 ### Importance

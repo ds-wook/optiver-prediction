@@ -560,6 +560,7 @@ def create_agg_features(
 
     prefix = [
         "log_return1_realized_volatility",
+        "log_return2_realized_volatility",
         "total_volume_sum",
         "trade_size_sum",
         "trade_order_count_sum",

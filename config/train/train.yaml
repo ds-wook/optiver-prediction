@@ -43,7 +43,5 @@ params:
     max_depth: 9
     min_child_samples: 885
     min_child_weight: 43.16734307889972
-    n_jobs: -1
     num_leaves: 1018
     objective: rmse
-    verbosity: -1
