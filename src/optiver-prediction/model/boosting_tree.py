@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from hydra.utils import to_absolute_path
 from lightgbm import LGBMRegressor
-from model import model_selection
+from model.model_selection import ShufflableGroupKFold
 from neptune.new.integrations import xgboost
 from neptune.new.integrations.lightgbm import NeptuneCallback, create_booster_summary
 from sklearn.model_selection import GroupKFold, KFold
@@ -28,7 +28,7 @@ def run_kfold_lightgbm(
     verbose: Union[int, bool] = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
 
-    kf = model_selection.GroupKFold(n_splits=n_fold, random_state=42, shuffle=True)
+    kf = ShufflableGroupKFold(n_splits=n_fold, random_state=42, shuffle=True)
     splits = kf.split(X, y, groups)
     lgb_oof = np.zeros(X.shape[0])
     lgb_preds = np.zeros(X_test.shape[0])
