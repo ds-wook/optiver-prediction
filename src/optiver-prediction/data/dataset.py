@@ -579,7 +579,6 @@ def create_agg_features(
     test_m = pd.merge(test, mat2[selected_cols], how="left", on="time_id")
 
     # filling missing values with train means
-
     features = [
         col
         for col in train_m.columns.tolist()
@@ -654,7 +653,6 @@ def network_agg_features(
     test_m = pd.merge(test, mat2[selected_cols], how="left", on="time_id")
 
     # filling missing values with train means
-
     features = [
         col
         for col in train_m.columns.tolist()

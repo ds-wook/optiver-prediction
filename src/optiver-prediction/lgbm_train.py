@@ -21,7 +21,7 @@ def _main(cfg: DictConfig):
     X = train.drop(["row_id", "target", "time_id"], axis=1)
     y = train["target"]
     X_test = test.drop(["row_id", "time_id"], axis=1)
-    group = train.time_id
+    group = train["time_id"]
 
     # Transform stock id to a numeric value
     X["stock_id"] = X["stock_id"].astype(int)

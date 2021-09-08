@@ -1,0 +1,18 @@
+dataset:
+  path: ../../input/optiver-realized-volatility-prediction
+  test: best_fea_test.pkl
+  train: best_fea_train.pkl
+model:
+  fold: 5
+  fold_name: group
+  verbose: 100
+params:
+  max_depth: 6
+  n_estimators: 1030
+  eta: 0.14411433835252993
+  subsample: 0.7
+  colsample_bytree: 0.6
+  min_child_weight: 72
+  reg_lambda: 0.0011282775827873572
+  reg_alpha: 0.034971544950363434
+  
