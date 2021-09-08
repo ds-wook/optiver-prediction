@@ -43,6 +43,7 @@ def _main(cfg: DictConfig):
             X,
             y,
             X_test,
+            group,
             dict(cfg.params.params1),
             cfg.model.verbose,
         )

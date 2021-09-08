@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from hydra.utils import to_absolute_path
 from lightgbm import LGBMRegressor
+from model import model_selection
 from neptune.new.integrations import xgboost
 from neptune.new.integrations.lightgbm import NeptuneCallback, create_booster_summary
 from sklearn.model_selection import GroupKFold, KFold
@@ -22,12 +23,13 @@ def run_kfold_lightgbm(
     X: pd.DataFrame,
     y: pd.DataFrame,
     X_test: pd.DataFrame,
+    groups: pd.Series,
     params: Optional[Dict[str, Any]] = None,
     verbose: Union[int, bool] = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
 
-    kf = KFold(n_splits=n_fold, random_state=2021, shuffle=True)
-    splits = kf.split(X)
+    kf = model_selection.GroupKFold(n_splits=n_fold, random_state=42, shuffle=True)
+    splits = kf.split(X, y, groups)
     lgb_oof = np.zeros(X.shape[0])
     lgb_preds = np.zeros(X_test.shape[0])
 
@@ -373,9 +375,7 @@ def load_lightgbm_model(
         X_valid, y_valid = X.iloc[valid_idx], y.iloc[valid_idx]
 
         # model
-        path = to_absolute_path(
-            f"../../models/lgbm_model/lgbm_group_kfold{fold}.pkl"
-        )
+        path = to_absolute_path(f"../../models/lgbm_model/lgbm_group_kfold{fold}.pkl")
         model = joblib.load(path)
 
         # validation
