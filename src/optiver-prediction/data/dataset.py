@@ -40,6 +40,11 @@ def calc_wap4(df: pd.DataFrame) -> pd.Series:
     return wap
 
 
+def encode_mean(column: str, df: pd.DataFrame) -> float:
+    avg = df.groupby("time_id")[column].transform("mean")
+    return np.abs(df[column].sub(avg).div(avg))
+
+
 # Function to calculate the log of the return
 # Remember that logb(x / y) = logb(x) - logb(y)
 def log_return(series: pd.DataFrame) -> np.ndarray:
@@ -307,7 +312,6 @@ def trade_preprocessor(file_path: str) -> pd.DataFrame:
         )
 
         # vol vars
-
         abs_diff_v = np.median(
             np.abs(df_id["size"].values - np.mean(df_id["size"].values))
         )
@@ -376,6 +380,62 @@ def trade_preprocessor(file_path: str) -> pd.DataFrame:
     )
     df_feature.drop(["trade_time_id_"], axis=1, inplace=True)
     return df_feature
+
+
+def encode_timeid(
+    train: pd.DataFrame, test: pd.DataFrame
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    columns_to_encode = [
+        "wap1_sum",
+        "wap2_sum",
+        "wap3_sum",
+        "wap4_sum",
+        "log_return1_realized_volatility",
+        "log_return2_realized_volatility",
+        "log_return3_realized_volatility",
+        "log_return4_realized_volatility",
+        "wap_balance_sum",
+        "price_spread_sum",
+        "price_spread2_sum",
+        "bid_spread_sum",
+        "ask_spread_sum",
+        "total_volume_sum",
+        "volume_imbalance_sum",
+        "bid_ask_spread_sum",
+        "trade_log_return_realized_volatility",
+        "trade_seconds_in_bucket_count_unique",
+        "trade_size_sum",
+        "trade_order_count_sum",
+        "trade_amount_sum",
+        "trade_tendency",
+        "trade_f_max",
+        "trade_df_max",
+        "trade_abs_diff",
+        "trade_energy",
+        "trade_iqr_p",
+        "trade_abs_diff_v",
+        "trade_energy_v",
+        "trade_iqr_p_v",
+    ]
+
+    df_aux = Parallel(n_jobs=-1, verbose=1)(
+        delayed(encode_mean)(column, train) for column in columns_to_encode
+    )
+    # Get group stats of time_id and stock_id
+    train = pd.concat(
+        [train] + [x.rename(x.name + "_timeid_encoded") for x in df_aux], axis=1
+    )
+    del df_aux
+
+    df_aux = Parallel(n_jobs=-1, verbose=1)(
+        delayed(encode_mean)(column, test) for column in columns_to_encode
+    )
+    # Get group stats of time_id and stock_id
+    test = pd.concat(
+        [test] + [x.rename(x.name + "_timeid_encoded") for x in df_aux], axis=1
+    )
+    del df_aux
+    return train, test
 
 
 # Function to get group stats for the stock_id and time_id
@@ -560,7 +620,6 @@ def create_agg_features(
 
     prefix = [
         "log_return1_realized_volatility",
-        "log_return2_realized_volatility",
         "total_volume_sum",
         "trade_size_sum",
         "trade_order_count_sum",
@@ -578,14 +637,14 @@ def create_agg_features(
     train_m = pd.merge(train, mat1[selected_cols], how="left", on="time_id")
     test_m = pd.merge(test, mat2[selected_cols], how="left", on="time_id")
 
-    # filling missing values with train means
-    features = [
-        col
-        for col in train_m.columns.tolist()
-        if col not in ["time_id", "target", "row_id"]
-    ]
-    train_m[features] = train_m[features].fillna(train_m[features].mean())
-    test_m[features] = test_m[features].fillna(train_m[features].mean())
+    # # filling missing values with train means
+    # features = [
+    #     col
+    #     for col in train_m.columns.tolist()
+    #     if col not in ["time_id", "target", "row_id"]
+    # ]
+    # train_m[features] = train_m[features].fillna(train_m[features].mean())
+    # test_m[features] = test_m[features].fillna(train_m[features].mean())
 
     return train_m, test_m
 
