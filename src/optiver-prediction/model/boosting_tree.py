@@ -46,36 +46,28 @@ def run_kfold_lightgbm(
         train_weights = 1 / np.square(y_train)
         val_weights = 1 / np.square(y_valid)
 
-        train_dataset = lgbm.Dataset(
-            X_train, y_train, weight=train_weights, categorical_feature=["stock_id"]
-        )
-        val_dataset = lgbm.Dataset(
-            X_valid, y_valid, weight=val_weights, categorical_feature=["stock_id"]
-        )
         # model
-        model = lgbm.train(
-            params=params,
-            train_set=train_dataset,
-            valid_sets=[train_dataset, val_dataset],
-            num_boost_round=10000,
+        model = LGBMRegressor(**params)
+        model.fit(
+            X_train,
+            y_train,
+            eval_set=[(X_train, y_train), (X_valid, y_valid)],
+            eval_metric=feval_metric,
+            sample_weight=train_weights,
+            eval_sample_weight=[val_weights],
             early_stopping_rounds=50,
-            verbose_eval=verbose,
-            feval=feval_RMSPE,
+            verbose=verbose,
+            categorical_feature=["stock_id"],
             callbacks=[neptune_callback],
         )
-
         # validation
-        lgb_oof[valid_idx] = model.predict(X_valid, num_iteration=model.best_iteration)
-        lgb_preds += model.predict(X_test, num_iteration=model.best_iteration) / n_fold
-        RMSPE = rmspe(y_true=y_valid, y_pred=lgb_oof[valid_idx])
-
-        print(f"Performance of the　prediction: , RMSPE: {RMSPE}")
-
+        lgb_oof[valid_idx] = model.predict(X_valid, num_iteration=model.best_iteration_)
+        lgb_preds += model.predict(X_test, num_iteration=model.best_iteration_) / n_fold
         model_path = to_absolute_path(
-            f"../../models/lgbm_model/best_lgbm_kfold{fold}.txt"
+            f"../../models/lgbm_model/lgbm_group_kfold{fold}.pkl"
         )
         # save model
-        model.save_model(model_path, num_iteration=model.best_iteration)
+        joblib.dump(model, model_path)
 
         # Log summary metadata to the same run under the "lgbm_summary" namespace
         run[f"lgbm_summary/fold_{fold}"] = create_booster_summary(
@@ -307,7 +299,7 @@ def run_group_kfold_xgboost(
     verbose: Union[int, bool] = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
 
-    group_kf = GroupKFold(n_splits=n_fold)
+    group_kf = ShufflableGroupKFold(n_splits=n_fold, random_state=42, shuffle=True)
     splits = group_kf.split(X=X, y=y, groups=groups)
     xgb_oof = np.zeros(X.shape[0])
     run = neptune.init(project="ds-wook/optiver-prediction", tags=["XGBoost", "Group"])

@@ -16,9 +16,9 @@ from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial, Trial
-from sklearn.model_selection import GroupKFold, KFold
+from sklearn.model_selection import KFold
 from utils.utils import feval_metric, feval_RMSPE, rmspe
-
+from model.model_selection import ShufflableGroupKFold
 warnings.filterwarnings("ignore")
 
 
@@ -72,11 +72,8 @@ class BayesianOptimizer:
     @staticmethod
     def lgbm_save_params(study: Study, params_name: str):
         params = study.best_trial.params
-        params["seed"] = 42
-        params["feature_fraction_seed"] = 42
-        params["bagging_seed"] = 42
-        params["drop_seed"] = 42
-        params["boosting"] = "gbdt"
+        params["n_estimators"] = 10000
+        params["boosting_type"] = "gbdt"
         params["objective"] = "rmse"
         params["verbosity"] = -1
         params["n_jobs"] = -1
@@ -188,14 +185,14 @@ def group_lgbm_objective(
     }
     pruning_callback = LightGBMPruningCallback(trial, "RMSPE", valid_name="valid_1")
 
-    group_kf = GroupKFold(n_splits=n_fold)
-    splits = group_kf.split(X, y, groups=groups)
+    group_kf = ShufflableGroupKFold(n_splits=n_fold, random_state=42, shuffle=True)
+    splits = group_kf.split(X, y, groups)
     lgbm_oof = np.zeros(X.shape[0])
 
     for fold, (train_idx, valid_idx) in enumerate(splits, 1):
         # create dataset
-        X_train, y_train = X.loc[train_idx], y[train_idx]
-        X_valid, y_valid = X.loc[valid_idx], y[valid_idx]
+        X_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
+        X_valid, y_valid = X.iloc[valid_idx], y.iloc[valid_idx]
 
         # Root mean squared percentage error weights
         train_weights = 1 / np.square(y_train)

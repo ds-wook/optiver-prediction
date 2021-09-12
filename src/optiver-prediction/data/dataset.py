@@ -637,14 +637,14 @@ def create_agg_features(
     train_m = pd.merge(train, mat1[selected_cols], how="left", on="time_id")
     test_m = pd.merge(test, mat2[selected_cols], how="left", on="time_id")
 
-    # # filling missing values with train means
-    # features = [
-    #     col
-    #     for col in train_m.columns.tolist()
-    #     if col not in ["time_id", "target", "row_id"]
-    # ]
-    # train_m[features] = train_m[features].fillna(train_m[features].mean())
-    # test_m[features] = test_m[features].fillna(train_m[features].mean())
+    # filling missing values with train means
+    features = [
+        col
+        for col in train_m.columns.tolist()
+        if col not in ["time_id", "target", "row_id"]
+    ]
+    train_m[features] = train_m[features].fillna(train_m[features].mean())
+    test_m[features] = test_m[features].fillna(train_m[features].mean())
 
     return train_m, test_m
 
