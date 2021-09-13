@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+from time import time
 from typing import Tuple, Union
 
 import lightgbm as lgbm
@@ -102,3 +104,11 @@ def reduce_mem_usage(df: pd.DataFrame, verbose: bool = True) -> pd.DataFrame:
             )
         )
     return df
+
+
+@contextmanager
+def timer(name):
+    t0 = time()
+    print(f"[{name}] start")
+    yield
+    print(f"[{name}] done in {time() - t0:.0f} s")

@@ -102,6 +102,7 @@ def read_test(path: str) -> pd.DataFrame:
 
 # Function to preprocess book data (for each stock id)
 def book_preprocessor(file_path: str):
+
     df = pd.read_parquet(file_path)
     # Calculate Wap
     df["wap1"] = calc_wap1(df)
