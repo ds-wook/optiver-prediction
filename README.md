@@ -9,7 +9,8 @@ Apply your data science skills to make financial markets better
 |LightGBM(10-group kfold)|0.21513|0.20133|-|
 |TabNet(5-kfold)|0.21241|0.20291|-|
 |TabNet(5-group kfold)|0.21386|-|-|
-
+|FFNN(5-knn+)|0.21253|0.20291|-|
+|FFNN(5-groupkFold)|0.21293|0.20115|-|
 
 ### Requirements
 + numpy
