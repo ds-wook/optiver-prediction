@@ -15,6 +15,13 @@ def _main(cfg: DictConfig):
 
     train, test = add_tau_feature(train, test)
     train, test = create_agg_features(train, test, path)
+    train["log_return1_realized_volatility_is_high"] = train[
+        "log_return1_realized_volatility"
+    ].apply(lambda x: 0 if 0.0001 <= x <= 0.0003 else 1)
+
+    test["log_return1_realized_volatility_is_high"] = test[
+        "log_return1_realized_volatility"
+    ].apply(lambda x: 0 if 0.0001 <= x <= 0.0003 else 1)
     print(train.shape, test.shape)
 
     # Split features and target

@@ -6,7 +6,7 @@ Apply your data science skills to make financial markets better
 |Score|CV|Public LB|private LB|
 |-----|--|------|-------|
 |LightGBM(5-group kfold)|0.21558|0.20164|-|
-|LightGBM(10-group kfold)|0.21513|0.20133|-|
+|LightGBM(10-group kfold)|0.21466|0.20118|-|
 |TabNet(5-kfold)|0.21241|0.20291|-|
 |TabNet(5-group kfold)|0.21386|-|-|
 |FFNN(5-knn+)|0.21253|0.20291|-|

@@ -61,24 +61,19 @@ def count_unique(series: pd.DataFrame) -> np.ndarray:
     return len(np.unique(series))
 
 
-def realized_quarticity(series: pd.DataFrame) -> np.ndarray:
-    return np.sum(series ** 4) * series.shape[0] / 3
+def is_high_realized_volatility(
+    train: pd.DataFrame, test: pd.DataFrame
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    for i in tqdm(range(1, 5)):
+        train[f"log_return{i}_realized_volatility_is_high"] = train[
+            f"log_return{i}_realized_volatility"
+        ].apply(lambda x: 0 if 0.0001 <= x <= 0.0003 else 1)
 
+        test[f"log_return{i}_realized_volatility_is_high"] = test[
+            f"log_return{i}_realized_volatility"
+        ].apply(lambda x: 0 if 0.0001 <= x <= 0.0003 else 1)
 
-def realized_quadpower_quarticity(series: pd.DataFrame) -> np.ndarray:
-    series = series.rolling(window=4).apply(np.product, raw=True)
-    return (np.sum(series) * series.shape[0] * (np.pi ** 2)) / 4
-
-
-def realized_1(series: pd.DataFrame) -> np.ndarray:
-    return np.sqrt(np.sum(series ** 4) / (6 * np.sum(series ** 2)))
-
-
-def realized_2(series: pd.DataFrame) -> np.ndarray:
-    return np.sqrt(
-        ((np.pi ** 2) * np.sum(series.rolling(window=4).apply(np.product, raw=True)))
-        / (8 * np.sum(series ** 2))
-    )
+    return train, test
 
 
 # Function to read our base train and test set
@@ -102,7 +97,6 @@ def read_test(path: str) -> pd.DataFrame:
 
 # Function to preprocess book data (for each stock id)
 def book_preprocessor(file_path: str):
-
     df = pd.read_parquet(file_path)
     # Calculate Wap
     df["wap1"] = calc_wap1(df)
