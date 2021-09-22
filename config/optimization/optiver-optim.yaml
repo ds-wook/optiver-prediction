@@ -1,11 +1,11 @@
 dataset:
-  path: "../../input/optiver-realized-volatility-prediction/"
-  train: "train.pkl"
-  test: "test.pkl"
+  path: ../../input/optiver-realized-volatility-prediction/
+  train: encoding_train.pkl
+  test: encoding_test.pkl
 
 optimization:
   trials: 100
   params: best_lgbm_params.yaml
+
 model:
   fold: 5
-  fold_name: "group"

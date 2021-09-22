@@ -2,16 +2,16 @@ dataset:
   path: ../../input/optiver-realized-volatility-prediction
   test: best_fea_test.pkl
   train: best_fea_train.pkl
-  
 model:
   fold: 5
+  fold_name: group
   verbose: 100
-
 params:
   boosting_type: gbdt
   colsample_bytree: 0.2788441133807552
+  drop_seed: 42
   learning_rate: 0.0367756027452049
-  max_depth: 9
+  max_depth: 13
   min_child_samples: 885
   min_child_weight: 43.16734307889972
   min_split_gain: 0.10496990541124217
@@ -20,8 +20,8 @@ params:
   num_leaves: 1018
   objective: rmse
   reg_alpha: 8.219772826786357
-  reg_lambda: 1.6709557931179373
+  reg_lambda: 0.24164622299156457
+  seed: 42
   subsample: 0.8339152856093507
   subsample_freq: 81
-  drop_seed: 42
   verbosity: -1
