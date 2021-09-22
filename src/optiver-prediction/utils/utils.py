@@ -72,7 +72,7 @@ def reduce_mem_usage(df: pd.DataFrame, verbose: bool = True) -> pd.DataFrame:
 
 
 @contextmanager
-def timer(name):
+def timer(name: str):
     t0 = time()
     print(f"[{name}] start")
     yield

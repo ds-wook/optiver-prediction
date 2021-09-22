@@ -1,7 +1,7 @@
 dataset:
   path: ../../input/optiver-realized-volatility-prediction
-  test: best_fea_test.pkl
-  train: best_fea_train.pkl
+  test: encoding_test.pkl
+  train: encoding_train.pkl
 model:
   fold: 5
   fold_name: group

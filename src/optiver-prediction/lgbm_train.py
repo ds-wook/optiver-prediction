@@ -4,9 +4,10 @@ from data.dataset import add_tau_feature, create_agg_features
 from hydra.utils import to_absolute_path
 from model.boosting_tree import run_kfold_lightgbm
 from omegaconf import DictConfig
+from utils.utils import timer
 
 
-@hydra.main(config_path="../../config/train/", config_name="lgbm.yaml")
+@hydra.main(config_path="../../config/train/", config_name="best_lgbm_params.yaml")
 def _main(cfg: DictConfig):
     path = to_absolute_path(cfg.dataset.path) + "/"
     train = pd.read_pickle(path + cfg.dataset.train)
@@ -34,15 +35,16 @@ def _main(cfg: DictConfig):
     X["stock_id"] = X["stock_id"].astype(int)
     X_test["stock_id"] = X_test["stock_id"].astype(int)
 
-    lgb_preds = run_kfold_lightgbm(
-        cfg.model.fold,
-        X,
-        y,
-        X_test,
-        group,
-        dict(cfg.params),
-        cfg.model.verbose,
-    )
+    with timer("LightGBM Learning"):
+        lgb_preds = run_kfold_lightgbm(
+            cfg.model.fold,
+            X,
+            y,
+            X_test,
+            group,
+            dict(cfg.params),
+            cfg.model.verbose,
+        )
 
     # Save test predictions
     test["target"] = lgb_preds
