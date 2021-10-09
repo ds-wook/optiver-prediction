@@ -3,7 +3,8 @@ Apply your data science skills to make financial markets better
 
 
 ### Model Architecture
-![competition-model](https://user-images.githubusercontent.com/46340424/136639663-81600a3e-1224-48e2-9a4a-dff653194f85.png)
+![competition-model](https://user-images.githubusercontent.com/46340424/136641319-ad68d304-d52d-46a1-a3fe-771b46d4ded9.png)
+
 
 ### Benchmark
 |Score|CV|Public LB|
