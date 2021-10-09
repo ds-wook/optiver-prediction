@@ -2,6 +2,9 @@
 Apply your data science skills to make financial markets better
 
 
+### Model Architecture
+![competition-model](https://user-images.githubusercontent.com/46340424/136639663-81600a3e-1224-48e2-9a4a-dff653194f85.png)
+
 ### Benchmark
 |Score|CV|Public LB|
 |-----|--|------|
@@ -24,4 +27,3 @@ Apply your data science skills to make financial markets better
 + pytorch-tabnet
 + pytorch
 
-### 
