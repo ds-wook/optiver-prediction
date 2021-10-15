@@ -1,6 +1,8 @@
 # Optiver-prediction
 Apply your data science skills to make financial markets better
 
+### Learning Process
+[Learning Visualization](https://app.neptune.ai/ds-wook/optiver-prediction/experiments?split=bth&dash=charts&viewId=standard-view)
 
 ### Model Architecture
 ![competition-model](https://user-images.githubusercontent.com/46340424/136811565-958e1ec8-976b-4236-8835-74e2e58b3388.png)
