@@ -28,4 +28,4 @@ Apply your data science skills to make financial markets better
 + hydra
 + pytorch-tabnet
 + pytorch
-
++ tensorflow-2.0
