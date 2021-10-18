@@ -29,3 +29,7 @@ Apply your data science skills to make financial markets better
 + pytorch-tabnet
 + pytorch
 + tensorflow-2.0
+
+# Score
+public 120
+private 1st 121
