@@ -1,6 +1,6 @@
 # Optiver-prediction
-Apply your data science skills to make financial markets better
-
+### Introduction
+This repository is the code that placed 121st in [Optiver Realized Volatility Prediction](https://www.kaggle.com/c/optiver-realized-volatility-prediction) competition.
 ### Learning Process
 [Learning Visualization](https://app.neptune.ai/ds-wook/optiver-prediction/experiments?split=bth&dash=charts&viewId=standard-view)
 
@@ -30,6 +30,6 @@ Apply your data science skills to make financial markets better
 + pytorch
 + tensorflow-2.0
 
-# Score
+### Score
 public 120
 private 1st 121
