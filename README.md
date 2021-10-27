@@ -1,6 +1,6 @@
 # Optiver-prediction
 ### Introduction
-This repository is the code that placed 121st in [Optiver Realized Volatility Prediction](https://www.kaggle.com/c/optiver-realized-volatility-prediction) competition.
+This repository is the code that [Optiver Realized Volatility Prediction](https://www.kaggle.com/c/optiver-realized-volatility-prediction) competition.
 ### Learning Process
 [Learning Visualization](https://app.neptune.ai/ds-wook/optiver-prediction/experiments?split=bth&dash=charts&viewId=standard-view)
 
@@ -33,3 +33,4 @@ This repository is the code that placed 121st in [Optiver Realized Volatility Pr
 ### Score
 public 120
 private 1st 121
+private 2st 409
