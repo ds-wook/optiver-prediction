@@ -31,6 +31,6 @@ This repository is the code that [Optiver Realized Volatility Prediction](https:
 + tensorflow-2.0
 
 ### Score
-public 120
-private 1st 121
-private 2st 230
+public 120 🥈 
+private 1st 121 🥈 
+private 2st 230 🥉 
