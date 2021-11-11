@@ -33,4 +33,5 @@ This repository is the code that [Optiver Realized Volatility Prediction](https:
 ### Score
 public 120 🥈  
 private 1st 121 🥈  
-private 2st 230 🥉  
+private 2nd 230 🥉  
+private 3th 277 🥉
