@@ -36,5 +36,5 @@ private 1st 121 🥈
 private 2nd 230 🥉  
 private 3th 277 🥉  
 private 4th 607  
-private 5th 290 🥉 
-private 6th 334 🥉
+private 5th 290 🥉  
+private 6th 334 🥉  
