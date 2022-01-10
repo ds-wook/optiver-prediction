@@ -10,7 +10,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 
-@hydra.main(config_path="../../config/train/", config_name="train.yaml")
+@hydra.main(config_path="../config/train/", config_name="train.yaml")
 def _main(cfg: DictConfig):
     path = to_absolute_path(cfg.dataset.path) + "/"
     train = pd.read_pickle(path + cfg.dataset.train)

@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 from tuning.bayesian import BayesianOptimizer, lgbm_objective
 
 
-@hydra.main(config_path="../../config/optimization/", config_name="optiver-optim.yaml")
+@hydra.main(config_path="../config/optimization/", config_name="optiver-optim.yaml")
 def _main(cfg: DictConfig):
     path = hydra.utils.to_absolute_path(cfg.dataset.path) + "/"
     train = pd.read_pickle(path + cfg.dataset.train)
@@ -26,7 +26,7 @@ def _main(cfg: DictConfig):
     y = train["target"]
     groups = train["time_id"]
 
-    objective = partial(lgbm_objective, X=X, y=y, groups=groups, n_fold=cfg.model.fold)
+    objective = partial(lgbm_objective, X=X, y=y, groups=groups, fold=cfg.model.fold)
 
     bayesian_optim = BayesianOptimizer(objective)
     study = bayesian_optim.build_study(trials=cfg.optimization.trials)

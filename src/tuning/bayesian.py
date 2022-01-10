@@ -3,20 +3,20 @@ from typing import Callable, Sequence, Union
 
 import neptune.new as neptune
 import neptune.new.integrations.optuna as optuna_utils
-import numpy as np
 import optuna
 import pandas as pd
 import yaml
 from hydra.utils import to_absolute_path
-from lightgbm import LGBMRegressor
 from neptune.new.exceptions import NeptuneMissingApiTokenException
 from optuna.integration import LightGBMPruningCallback
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial, Trial
-from utils.utils import feval_metric, rmspe
-from model.model_selection import ShufflableGroupKFold
+
+from model.gbdt import LightGBMTrainer
+from utils.utils import rmspe
+
 warnings.filterwarnings("ignore")
 
 
@@ -91,7 +91,7 @@ def lgbm_objective(
     X: pd.DataFrame,
     y: pd.Series,
     groups: pd.Series,
-    n_fold: int,
+    fold: int,
 ) -> float:
     params = {
         "learning_rate": trial.suggest_float("learning_rate", 1e-02, 2e-01),
@@ -115,37 +115,14 @@ def lgbm_objective(
     }
     pruning_callback = LightGBMPruningCallback(trial, "RMSPE", valid_name="valid_1")
 
-    group_kf = ShufflableGroupKFold(n_splits=n_fold, random_state=42, shuffle=True)
-    splits = group_kf.split(X, y, groups)
-    lgbm_oof = np.zeros(X.shape[0])
+    lgbm_trainer = LightGBMTrainer(
+        params=params,
+        run=pruning_callback,
+        search=True,
+        fold=fold,
+        metric=rmspe,
+    )
+    result = lgbm_trainer.train(X, y, groups)
+    RMSPE = rmspe(y, result.oof_preds)
 
-    for fold, (train_idx, valid_idx) in enumerate(splits, 1):
-        # create dataset
-        X_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
-        X_valid, y_valid = X.iloc[valid_idx], y.iloc[valid_idx]
-
-        # Root mean squared percentage error weights
-        train_weights = 1 / np.square(y_train)
-        val_weights = 1 / np.square(y_valid)
-
-        # model
-        model = LGBMRegressor(**params)
-        model.fit(
-            X_train,
-            y_train,
-            eval_set=[(X_train, y_train), (X_valid, y_valid)],
-            eval_metric=feval_metric,
-            sample_weight=train_weights,
-            eval_sample_weight=[val_weights],
-            early_stopping_rounds=50,
-            verbose=False,
-            categorical_feature=["stock_id"],
-            callbacks=[pruning_callback],
-        )
-        # validation
-        lgbm_oof[valid_idx] = model.predict(
-            X_valid, num_iteration=model.best_iteration_
-        )
-
-    RMSPE = rmspe(y, lgbm_oof)
     return RMSPE
