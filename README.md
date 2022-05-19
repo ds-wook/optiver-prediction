@@ -1,8 +1,6 @@
 # Optiver-prediction
 ### Introduction
 This repository is the code that [Optiver Realized Volatility Prediction](https://www.kaggle.com/c/optiver-realized-volatility-prediction) competition.
-### Learning Process
-[Learning Visualization](https://app.neptune.ai/ds-wook/optiver-prediction/experiments?split=bth&dash=charts&viewId=standard-view)
 
 ### Model Architecture
 ![competition-model](https://user-images.githubusercontent.com/46340424/136811565-958e1ec8-976b-4236-8835-74e2e58b3388.png)
